@@ -64,7 +64,9 @@ class FixturesTest < ActiveRecord::TestCase
     end
 
     def call(_, _, _, _, values)
-      @events << values[:sql] if values[:sql] =~ /INSERT/
+      return unless values[:name] == 'Fixtures Insert'
+
+      @events << values[:sql]
     end
   end
 
@@ -73,8 +75,10 @@ class FixturesTest < ActiveRecord::TestCase
       begin
         subscriber = InsertQuerySubscriber.new
         subscription = ActiveSupport::Notifications.subscribe("sql.active_record", subscriber)
-        create_fixtures("bulbs")
+        create_fixtures("bulbs", "authors", "computers")
+
         assert_equal 1, subscriber.events.size, "It takes one INSERT query to insert two fixtures"
+        assert_match(/INSERT INTO `bulbs`.*INSERT INTO `authors`.*INSERT INTO `computers`/m, subscriber.events.first)
       ensure
         ActiveSupport::Notifications.unsubscribe(subscription)
       end

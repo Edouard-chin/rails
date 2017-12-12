@@ -355,36 +355,49 @@ module ActiveRecord
 
       # Inserts a set of fixtures into the table. Overridden in adapters that require
       # something beyond a simple insert (eg. Oracle).
-      def insert_fixtures(fixtures, table_name)
-        return if fixtures.empty?
+      def insert_fixtures(fixture_set, tables_to_delete = [])
+        total_sql = String.new
 
-        columns = schema_cache.columns_hash(table_name)
+        fixture_set.each do |table_name, fixtures|
+          next if fixtures.empty?
 
-        values = fixtures.map do |fixture|
-          fixture = fixture.stringify_keys
+          columns = schema_cache.columns_hash(table_name)
 
-          unknown_columns = fixture.keys - columns.keys
-          if unknown_columns.any?
-            raise Fixture::FixtureError, %(table "#{table_name}" has no columns named #{unknown_columns.map(&:inspect).join(', ')}.)
-          end
+          values = fixtures.map do |fixture|
+            fixture = fixture.stringify_keys
 
-          columns.map do |name, column|
-            if fixture.key?(name)
-              type = lookup_cast_type_from_column(column)
-              bind = Relation::QueryAttribute.new(name, fixture[name], type)
-              with_yaml_fallback(bind.value_for_database)
-            else
-              Arel.sql("DEFAULT")
+            unknown_columns = fixture.keys - columns.keys
+            if unknown_columns.any?
+              raise Fixture::FixtureError, %(table "#{table_name}" has no columns named #{unknown_columns.map(&:inspect).join(', ')}.)
+            end
+
+            columns.map do |name, column|
+              if fixture.key?(name)
+                type = lookup_cast_type_from_column(column)
+                bind = Relation::QueryAttribute.new(name, fixture[name], type)
+                with_yaml_fallback(bind.value_for_database)
+              else
+                Arel.sql("DEFAULT")
+              end
             end
           end
+
+          table = Arel::Table.new(table_name)
+          manager = Arel::InsertManager.new
+          manager.into(table)
+          columns.each_key { |column| manager.columns << table[column] }
+          manager.values = manager.create_values_list(values)
+          total_sql << manager.to_sql
+          total_sql << ";\n"
         end
 
-        table = Arel::Table.new(table_name)
-        manager = Arel::InsertManager.new
-        manager.into(table)
-        columns.each_key { |column| manager.columns << table[column] }
-        manager.values = manager.create_values_list(values)
-        execute manager.to_sql, "Fixtures Insert"
+        disable_referential_integrity do
+          transaction do
+            tables_to_delete.each { |table| delete "DELETE FROM #{quote_table_name(table)}", "Fixture Delete" }
+            execute total_sql, "Fixtures Insert"
+            yield if block_given?
+          end
+        end
       end
 
       def empty_insert_statement_value

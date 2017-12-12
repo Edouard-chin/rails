@@ -529,11 +529,26 @@ module ActiveRecord
         index.using == :btree || super
       end
 
-      def insert_fixtures(*)
-        without_sql_mode("NO_AUTO_VALUE_ON_ZERO") { super }
+      def insert_fixtures(fixture_set, tables_to_delete = [])
+        iterate_over_results = -> { while raw_connection.next_result; end; }
+
+        without_sql_mode("NO_AUTO_VALUE_ON_ZERO") do
+          with_multi_statements { super(fixture_set, tables_to_delete, &iterate_over_results) }
+        end
       end
 
       private
+
+        def with_multi_statements
+          previous_flags = @config[:flags]
+          @config[:flags] = Mysql2::Client::MULTI_STATEMENTS
+          reconnect!
+
+          yield
+        ensure
+          @config[:flags] = previous_flags
+          reconnect!
+        end
 
         def without_sql_mode(mode)
           result = execute("SELECT @@SESSION.sql_mode")

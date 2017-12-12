@@ -228,7 +228,7 @@ class PostgresqlArrayTest < ActiveRecord::PostgreSQLTestCase
 
   def test_insert_fixtures
     tag_values = ["val1", "val2", "val3_with_'_multiple_quote_'_chars"]
-    @connection.insert_fixtures([{ "tags" => tag_values }], "pg_arrays")
+    @connection.insert_fixtures("pg_arrays" => [{ "tags" => tag_values }])
     assert_equal(PgArray.last.tags, tag_values)
   end
 
