@@ -38,21 +38,15 @@ module ActiveSupport
         end
       end
 
-      def before_setup # :nodoc:
+      def setup # :nodoc:
         super
         run_callbacks :setup
       end
 
-      def after_teardown # :nodoc:
-        begin
-          run_callbacks :teardown
-        rescue => e
-          error = e
-        end
+      def teardown # :nodoc:
+        run_callbacks :teardown
 
         super
-      ensure
-        raise error if error
       end
     end
   end
