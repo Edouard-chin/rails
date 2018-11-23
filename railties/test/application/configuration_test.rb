@@ -1739,7 +1739,7 @@ module ApplicationTests
     test "config_for loads custom configuration from yaml files" do
       app_file "config/custom.yml", <<-RUBY
       development:
-        foo: 'bar'
+        key: 'custom key'
       RUBY
 
       add_to_config <<-RUBY
@@ -1748,54 +1748,7 @@ module ApplicationTests
 
       app "development"
 
-      assert_equal "bar", Rails.application.config.my_custom_config["foo"]
-    end
-
-    test "config_for loads custom configuration from yaml accessible as symbol" do
-      app_file "config/custom.yml", <<-RUBY
-      development:
-        foo: 'bar'
-      RUBY
-
-      add_to_config <<-RUBY
-        config.my_custom_config = config_for('custom')
-      RUBY
-
-      app "development"
-
-      assert_equal "bar", Rails.application.config.my_custom_config[:foo]
-    end
-
-    test "config_for loads custom configuration from yaml accessible as method" do
-      app_file "config/custom.yml", <<-RUBY
-      development:
-        foo: 'bar'
-      RUBY
-
-      add_to_config <<-RUBY
-        config.my_custom_config = config_for('custom')
-      RUBY
-
-      app "development"
-
-      assert_equal "bar", Rails.application.config.my_custom_config.foo
-    end
-
-    test "config_for loads nested custom configuration from yaml as symbol keys" do
-      app_file "config/custom.yml", <<-RUBY
-      development:
-        foo:
-          bar:
-            baz: 1
-      RUBY
-
-      add_to_config <<-RUBY
-        config.my_custom_config = config_for('custom')
-      RUBY
-
-      app "development"
-
-      assert_equal 1, Rails.application.config.my_custom_config.foo[:bar][:baz]
+      assert_equal "custom key", Rails.application.config.my_custom_config["key"]
     end
 
     test "config_for uses the Pathname object if it is provided" do
