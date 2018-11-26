@@ -7,11 +7,11 @@ module Rails
   end
 
   module VERSION
-    MAJOR = 6
-    MINOR = 0
-    TINY  = 0
-    PRE   = "alpha"
+    MAJOR = 5
+    MINOR = 2
+    TINY  = 1
+    # PRE   = "alpha"
 
-    STRING = [MAJOR, MINOR, TINY, PRE].compact.join(".")
+    STRING = [MAJOR, MINOR, TINY].compact.join(".")
   end
 end
