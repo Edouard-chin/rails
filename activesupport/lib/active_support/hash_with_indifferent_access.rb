@@ -369,7 +369,7 @@ module ActiveSupport
           if options[:for] == :to_hash
             value.to_hash
           else
-            value.nested_under_indifferent_access
+            as_self(value)
           end
         elsif value.is_a?(Array)
           if options[:for] != :assignment || value.frozen?
@@ -379,6 +379,10 @@ module ActiveSupport
         else
           value
         end
+      end
+
+      def as_self(value)
+        value.nested_under_indifferent_access
       end
 
       def set_defaults(target) # :doc:

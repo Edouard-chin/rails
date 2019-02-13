@@ -602,10 +602,7 @@ module Rails
         end
 
         def []=(key, value)
-          if value.is_a?(Hash)
-            value = self.class.new(value)
-          end
-          super(key.to_sym, value)
+          regular_writer(key.to_sym, convert_value(value, for: :assignment))
         end
 
         private
@@ -622,6 +619,10 @@ module Rails
             end
 
             key
+          end
+
+          def as_self(value)
+            self.class.new(value)
           end
       end
   end
