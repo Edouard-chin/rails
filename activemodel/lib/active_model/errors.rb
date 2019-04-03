@@ -309,6 +309,7 @@ module ActiveModel
     #   person.errors.details
     #   # => {:base=>[{error: :name_or_email_blank}]}
     def add(attribute, message = :invalid, options = {})
+      raise
       message = message.call if message.respond_to?(:call)
       detail  = normalize_detail(message, options)
       message = normalize_message(attribute, message, options)
