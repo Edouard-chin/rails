@@ -346,7 +346,7 @@ module ActiveRecord
     # Call the #after_rollback callbacks. The +force_restore_state+ argument indicates if the record
     # state should be rolled back to the beginning or just to the last savepoint.
     def rolledback!(force_restore_state: false, should_run_callbacks: true) #:nodoc:
-      if should_run_callbacks
+      if should_run_callbacks && trigger_transactional_callbacks?
         _run_rollback_callbacks
         _run_rollback_without_transaction_enrollment_callbacks
       end
