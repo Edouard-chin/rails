@@ -47,8 +47,6 @@ module ActiveRecord
     # The exceptions AdapterNotSpecified, AdapterNotFound and +ArgumentError+
     # may be returned on an error.
     def establish_connection(config_or_env = nil)
-      @connection_handler ||= ConnectionAdapters::ConnectionHandler.new
-
       config_hash = resolve_config_for_connection(config_or_env)
       connection_handler.establish_connection(config_hash)
     end
@@ -68,8 +66,6 @@ module ActiveRecord
     #
     # Returns an array of established connections.
     def connects_to(database: {})
-      @connection_handler ||= ConnectionAdapters::ConnectionHandler.new
-
       connections = []
 
       database.each do |role, database_key|
