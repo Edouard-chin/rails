@@ -165,11 +165,6 @@ module ActiveRecord
       end
     end
 
-    def lookup_connection_handler(handler_key) # :nodoc:
-      handler_key ||= ActiveRecord::Base.writing_role
-      connection_handlers[handler_key] ||= ActiveRecord::ConnectionAdapters::ConnectionHandler.new
-    end
-
     def resolve_config_for_connection(config_or_env) # :nodoc:
       raise "Anonymous class is not allowed." unless name
 
