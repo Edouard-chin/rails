@@ -61,9 +61,10 @@ class QueryCacheTest < ActiveRecord::TestCase
       reading: ActiveRecord::ConnectionAdapters::ConnectionHandler.new
     }
 
-    ActiveRecord::Base.connected_to(role: :reading) do
-      ActiveRecord::Base.establish_connection(ActiveRecord::Base.configurations["arunit"])
-    end
+    ActiveRecord::Base.connection_handlers[:reading].establish_connection(
+      ActiveRecord::Base.configurations["arunit"],
+      role: :reading
+    )
 
     mw = middleware { |env|
       ro_conn = ActiveRecord::Base.connection_handlers[:reading].connection_pool_list.first.connection
@@ -555,7 +556,7 @@ class QueryCacheTest < ActiveRecord::TestCase
 
   private
     def with_temporary_connection_pool
-      db_config = ActiveRecord::Base.connection_handler.send(:owner_to_config).fetch("primary")
+      db_config = ActiveRecord::Base.connection_handler.send(:role_to_config).fetch(:writing)
       new_pool = ActiveRecord::ConnectionAdapters::ConnectionPool.new(db_config)
 
       db_config.stub(:connection_pool, new_pool) do
