@@ -5,6 +5,7 @@ require "models/college"
 require "models/course"
 require "models/professor"
 require "models/other_dog"
+require "byebug"
 
 module ARTest
   def self.connection_name
@@ -21,9 +22,10 @@ module ARTest
   def self.connect
     puts "Using #{connection_name}"
     ActiveRecord::Base.logger = ActiveSupport::Logger.new("debug.log", 0, 100 * 1024 * 1024)
-    ActiveRecord::Base.connection_handlers = { ActiveRecord::Base.writing_role => ActiveRecord::Base.default_connection_handler }
+    ActiveRecord::Base.connection_handlers = { activerecord_unittest: ActiveRecord::Base.default_connection_handler }
     ActiveRecord::Base.configurations = connection_config
     ActiveRecord::Base.establish_connection :arunit
+    $STARTS_HERE = 1
     ARUnit2Model.establish_connection :arunit2
   end
 end

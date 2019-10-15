@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "byebug"
+
 module ActiveRecord
   module ConnectionHandling
     RAILS_ENV   = -> { (Rails.env if defined?(Rails.env)) || ENV["RAILS_ENV"].presence || ENV["RACK_ENV"].presence }
@@ -48,7 +50,15 @@ module ActiveRecord
     # may be returned on an error.
     def establish_connection(config_or_env = nil)
       config_hash = resolve_config_for_connection(config_or_env)
+
+      assign_connection_handler(config_hash[:database])
       connection_handler.establish_connection(config_hash)
+    end
+
+    def assign_connection_handler(database_name)
+      connection_handlers[database_name.to_sym] ||= ConnectionAdapters::ConnectionHandler.new
+
+      @connection_handler = connection_handlers[database_name.to_sym]
     end
 
     # Connects a model to the databases specified. The +database+ keyword
@@ -227,16 +237,10 @@ module ActiveRecord
       connection_handler.connected?(current_role)
     end
 
-    def remove_connection(name = nil)
-      name ||= @connection_specification_name if defined?(@connection_specification_name)
-      # if removing a connection that has a pool, we reset the
-      # connection_specification_name so it will use the parent
-      # pool.
-      if connection_handler.retrieve_connection_pool(name)
-        self.connection_specification_name = nil
+    def remove_connection(role = current_role)
+      if defined?(@connection_handler) && @connection_handler
+        connection_handler.remove_connection(role)
       end
-
-      connection_handler.remove_connection(name)
     end
 
     def clear_cache! # :nodoc:
