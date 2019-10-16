@@ -25,7 +25,6 @@ module ARTest
     ActiveRecord::Base.connection_handlers = { activerecord_unittest: ActiveRecord::Base.default_connection_handler }
     ActiveRecord::Base.configurations = connection_config
     ActiveRecord::Base.establish_connection :arunit
-    $STARTS_HERE = 1
     ARUnit2Model.establish_connection :arunit2
   end
 end

@@ -1049,7 +1049,8 @@ module ActiveRecord
       end
       alias :connection_pools :connection_pool_list
 
-      def establish_connection(config, role: ActiveRecord::Base.writing_role)
+      def establish_connection(config, role: nil)
+        role ||= ActiveRecord::Base.writing_role
         resolver = Resolver.new(Base.configurations)
         db_config = resolver.lookup(config)
 
@@ -1108,7 +1109,8 @@ module ActiveRecord
         unless pool
           # multiple database application
           if ActiveRecord::Base.connection_handler != ActiveRecord::Base.default_connection_handler
-            raise ConnectionNotEstablished, "No connection pool with '#{role}' found for the '#{ActiveRecord::Base.current_role}' role."
+            database = ActiveRecord::Base.connection_handler.connection_pool_list.first.db_config.database
+            raise ConnectionNotEstablished, "No connection pool with '#{role}' role found for the '#{database}' database."
           else
             raise ConnectionNotEstablished, "No connection pool with '#{role}' found."
           end

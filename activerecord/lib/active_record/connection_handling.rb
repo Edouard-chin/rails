@@ -80,6 +80,7 @@ module ActiveRecord
 
       database.each do |role, database_key|
         config_hash = resolve_config_for_connection(database_key)
+        assign_connection_handler(config_hash[:database])
         connections << connection_handler.establish_connection(config_hash, role: role)
       end
 
@@ -133,6 +134,7 @@ module ActiveRecord
         end
 
         config_hash = resolve_config_for_connection(database)
+        assign_connection_handler(config_hash[:database])
         connection_handler.establish_connection(config_hash, role: role)
         with_role(role, &blk)
       elsif role
