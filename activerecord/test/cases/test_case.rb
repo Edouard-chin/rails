@@ -30,6 +30,17 @@ module ActiveRecord
       SQLCounter.clear_log
     end
 
+    def before_setup
+      @original_ar_connection_handlers = ActiveRecord::Base.connection_handlers.dup
+      super
+    end
+
+    def after_teardown
+      super
+      ActiveRecord::Base.connection_handlers = @original_ar_connection_handlers
+      ActiveRecord::Base.establish_connection(:arunit) rescue nil
+    end
+
     def capture_sql
       ActiveRecord::Base.connection.materialize_transactions
       SQLCounter.clear_log

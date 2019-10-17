@@ -9,7 +9,7 @@ module ActiveRecord
         def resolve(spec, config = {})
           configs = ActiveRecord::DatabaseConfigurations.new(config)
           resolver = ConnectionAdapters::Resolver.new(configs)
-          resolver.resolve(spec, spec).configuration_hash
+          resolver.resolve(spec).configuration_hash
         end
 
         def spec(spec, config = {})
@@ -43,7 +43,6 @@ module ActiveRecord
             adapter:  "abstract",
             host:     "foo",
             encoding: "utf8",
-            name:     "production"
           }, spec)
         end
 
@@ -53,7 +52,6 @@ module ActiveRecord
             adapter:  "abstract",
             host:     "foo",
             encoding: "utf8",
-            name:     "production"
           }, spec)
         end
 
@@ -65,7 +63,6 @@ module ActiveRecord
             host:     "foo",
             encoding: "utf8",
             pool:     "3",
-            name:     "production"
           }, spec)
         end
 
@@ -136,7 +133,6 @@ module ActiveRecord
             adapter:  "sqlite3",
             database: "foo",
             encoding: "utf8",
-            name:     "production"
           }, spec)
         end
 

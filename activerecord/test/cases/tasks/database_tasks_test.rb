@@ -295,10 +295,10 @@ module ActiveRecord
         old_configurations = ActiveRecord::Base.configurations
         ActiveRecord::Base.configurations = @configurations
 
-        # To refrain from connecting to a newly created empty DB in
-        # sqlite3_mem tests
-        ActiveRecord::Base.connection_handler.stub(:establish_connection, nil) do
-          yield
+        stub_any_instance(ActiveRecord::ConnectionAdapters::ConnectionHandler) do |instance|
+          instance.stub(:establish_connection, nil) do
+            yield
+          end
         end
       ensure
         ActiveRecord::Base.configurations = old_configurations
@@ -328,7 +328,7 @@ module ActiveRecord
       end
     end
 
-    def test_creates_current_environment_database_with_url
+    def test_creates_current_environment_database_with_url_dudek
       with_stubbed_configurations_establish_connection do
         assert_called_with(
           ActiveRecord::Tasks::DatabaseTasks,
@@ -400,8 +400,10 @@ module ActiveRecord
         old_configurations = ActiveRecord::Base.configurations
         ActiveRecord::Base.configurations = @configurations
 
-        ActiveRecord::Base.connection_handler.stub(:establish_connection, nil) do
-          yield
+        stub_any_instance(ActiveRecord::ConnectionAdapters::ConnectionHandler) do |instance|
+          instance.stub(:establish_connection, nil) do
+            yield
+          end
         end
       ensure
         ActiveRecord::Base.configurations = old_configurations
@@ -517,8 +519,10 @@ module ActiveRecord
         old_configurations = ActiveRecord::Base.configurations
         ActiveRecord::Base.configurations = @configurations
 
-        ActiveRecord::Base.connection_handler.stub(:establish_connection, nil) do
-          yield
+        stub_any_instance(ActiveRecord::ConnectionAdapters::ConnectionHandler) do |instance|
+          instance.stub(:establish_connection, nil) do
+            yield
+          end
         end
       ensure
         ActiveRecord::Base.configurations = old_configurations

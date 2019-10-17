@@ -178,7 +178,9 @@ module ActiveRecord
     def enlist_fixture_connections
       setup_shared_connection_pool
 
-      ActiveRecord::Base.connection_handler.connection_pool_list.map(&:connection)
+      ActiveRecord::Base.connection_handlers.each_with_object([]) do |(db, handler), acc|
+        acc << handler.retrieve_connection(ActiveRecord::Base.writing_role)
+      end
     end
 
     private

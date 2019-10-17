@@ -56,8 +56,9 @@ module ActiveRecord
     end
 
     def assign_connection_handler(database_name)
-      connection_handlers[database_name.to_sym] ||= ConnectionAdapters::ConnectionHandler.new
+      return unless database_name
 
+      connection_handlers[database_name.to_sym] ||= ConnectionAdapters::ConnectionHandler.new
       @connection_handler = connection_handlers[database_name.to_sym]
     end
 
