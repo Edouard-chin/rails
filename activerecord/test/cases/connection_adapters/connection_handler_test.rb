@@ -2,7 +2,6 @@
 
 require "cases/helper"
 require "models/person"
-require "byebug"
 
 module ActiveRecord
   module ConnectionAdapters
@@ -61,13 +60,13 @@ module ActiveRecord
         @prev_connection_handler = ActiveRecord::Base.connection_handler
 
         ActiveRecord::Base.establish_connection(:common)
-        Person.establish_connection(:primary)
+        TightPerson.establish_connection(:primary)
         LoosePerson.establish_connection(:readonly)
 
         assert_not_nil pool = ActiveRecord::Base.connection_handlers['LoosePerson'].retrieve_connection_pool(ActiveRecord::Base.writing_role)
         assert_equal "db/readonly.sqlite3", pool.db_config.database
 
-        assert_not_nil pool = ActiveRecord::Base.connection_handlers['Person'].retrieve_connection_pool(ActiveRecord::Base.writing_role)
+        assert_not_nil pool = ActiveRecord::Base.connection_handlers['TightPerson'].retrieve_connection_pool(ActiveRecord::Base.writing_role)
         assert_equal "db/primary.sqlite3", pool.db_config.database
 
         assert_not_nil pool = ActiveRecord::Base.connection_handlers['ActiveRecord::Base'].retrieve_connection_pool(ActiveRecord::Base.writing_role)
@@ -76,6 +75,8 @@ module ActiveRecord
         ActiveRecord::Base.configurations = @prev_configs
         ActiveRecord::Base.connection_handlers = @prev_connection_handlers
         ActiveRecord::Base.connection_handler = @prev_connection_handler
+        TightPerson.connection_handler = nil
+        LoosePerson.connection_handler = nil
         ENV["RAILS_ENV"] = previous_env
       end
 

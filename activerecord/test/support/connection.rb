@@ -5,7 +5,6 @@ require "models/college"
 require "models/course"
 require "models/professor"
 require "models/other_dog"
-require "byebug"
 
 module ARTest
   def self.connection_name

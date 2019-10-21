@@ -133,8 +133,7 @@ module ActiveRecord
                                   define_singleton_method(:name) { handler_name }
                                   define_singleton_method(:to_s) { handler_name }
 
-                                  # establish_connection(db_config.configuration_hash)
-                                end.tap { |klass| klass.assign_connection_handler(db_config.database, db_config: db_config) }
+                                end.tap { |klass| klass.assign_connection_handler(db_config.database) }
                               end
       end
 

@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "byebug"
-
 module ActiveRecord
   module ConnectionHandling
     RAILS_ENV   = -> { (Rails.env if defined?(Rails.env)) || ENV["RAILS_ENV"].presence || ENV["RACK_ENV"].presence }
@@ -55,7 +53,7 @@ module ActiveRecord
       connection_handler.establish_connection(config_hash)
     end
 
-    def assign_connection_handler(database_name, db_config: nil)
+    def assign_connection_handler(database_name)
       return unless database_name
 
       connection_handlers[name] ||= ConnectionAdapters::ConnectionHandler.new

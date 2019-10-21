@@ -359,7 +359,7 @@ module ActiveRecord
       end
     end
 
-    def test_creates_test_and_development_databases_when_rails_env_is_development_dudek
+    def test_creates_test_and_development_databases_when_rails_env_is_development
       old_env = ENV["RAILS_ENV"]
       ENV["RAILS_ENV"] = "development"
 

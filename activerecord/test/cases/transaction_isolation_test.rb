@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "cases/helper"
-require "byebug"
 
 unless ActiveRecord::Base.connection.supports_transaction_isolation?
   class TransactionIsolationUnsupportedTest < ActiveRecord::TestCase
@@ -63,10 +62,10 @@ else
 
     # We are testing that a nonrepeatable read does not happen
     if ActiveRecord::Base.connection.transaction_isolation_levels.include?(:repeatable_read)
-      test "repeatable read dudek" do
+      test "repeatable read" do
         tag = Tag.create(name: "jon")
 
-        Tag.transaction(isolation: :repeatable_read, joinable: false) do
+        Tag.transaction(isolation: :repeatable_read) do
           tag.reload
           Tag2.find(tag.id).update(name: "emily")
 
