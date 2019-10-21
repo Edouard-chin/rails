@@ -12,11 +12,11 @@ module ActiveRecord
       fixtures :people
 
       def setup
-        @handlers = { primary: ConnectionHandler.new, animals: ConnectionHandler.new }
-        @primary_handler = @handlers[:primary]
-        @animals_handler = @handlers[:animals]
-        @rw_pool = @handlers[:primary].establish_connection(ActiveRecord::Base.configurations["arunit"], role: :writing)
-        @ro_pool = @handlers[:animals].establish_connection(ActiveRecord::Base.configurations["arunit"], role: :reading)
+        @handlers = { "Base" => ConnectionHandler.new, "Animal" => ConnectionHandler.new }
+        @primary_handler = @handlers["Base"]
+        @animals_handler = @handlers["Animal"]
+        @rw_pool = @handlers["Base"].establish_connection(ActiveRecord::Base.configurations["arunit"], role: :writing)
+        @ro_pool = @handlers["Animal"].establish_connection(ActiveRecord::Base.configurations["arunit"], role: :reading)
       end
 
       def teardown
@@ -73,19 +73,19 @@ module ActiveRecord
 
           config = {
             "default_env" => {
-              "readonly" => { "adapter" => "sqlite3", "database" => "db/primary.sqlite3", "user" => "root_readonly" },
-              "primary"  => { "adapter" => "sqlite3", "database" => "db/primary.sqlite3", "user" => "root" }
+              "readonly" => { "adapter" => "sqlite3", "database" => "db/readonly.sqlite3" },
+              "primary"  => { "adapter" => "sqlite3", "database" => "db/primary.sqlite3" }
             }
           }
           @prev_configs, ActiveRecord::Base.configurations = ActiveRecord::Base.configurations, config
 
           ActiveRecord::Base.connects_to(database: { writing: :primary, reading: :readonly })
 
-          assert_not_nil pool = ActiveRecord::Base.connection_handlers[:"db/primary.sqlite3"].retrieve_connection_pool(:writing)
+          assert_not_nil pool = ActiveRecord::Base.connection_handlers["ActiveRecord::Base"].retrieve_connection_pool(:writing)
           assert_equal "db/primary.sqlite3", pool.db_config.database
 
-          assert_not_nil pool = ActiveRecord::Base.connection_handlers[:"db/primary.sqlite3"].retrieve_connection_pool(:reading)
-          assert_equal "db/primary.sqlite3", pool.db_config.database
+          assert_not_nil pool = ActiveRecord::Base.connection_handlers["ActiveRecord::Base"].retrieve_connection_pool(:reading)
+          assert_equal "db/readonly.sqlite3", pool.db_config.database
         ensure
           ActiveRecord::Base.configurations = @prev_configs
           ActiveRecord::Base.establish_connection(:arunit)
@@ -97,8 +97,8 @@ module ActiveRecord
 
           config = {
             "default_env" => {
-              "readonly" => { "adapter" => "sqlite3", "database" => "db/primary.sqlite3", "user" => "readonly_root" },
-              "primary"  => { "adapter" => "sqlite3", "database" => "db/primary.sqlite3", "user" => "root" }
+              "readonly" => { "adapter" => "sqlite3", "database" => "db/readonly.sqlite3" },
+              "primary"  => { "adapter" => "sqlite3", "database" => "db/primary.sqlite3" }
             }
           }
           @prev_configs, ActiveRecord::Base.configurations = ActiveRecord::Base.configurations, config
@@ -106,14 +106,14 @@ module ActiveRecord
           ActiveRecord::Base.connects_to(database: { writing: :primary, reading: :readonly })
 
           ActiveRecord::Base.connected_to(role: :reading) do
-            assert_equal ActiveRecord::Base.connection_handler, ActiveRecord::Base.connection_handlers[:"db/primary.sqlite3"]
+            assert_equal ActiveRecord::Base.connection_handler, ActiveRecord::Base.connection_handlers["ActiveRecord::Base"]
             assert_equal :reading, ActiveRecord::Base.current_role
             assert ActiveRecord::Base.connected_to?(role: :reading)
             assert_not ActiveRecord::Base.connected_to?(role: :writing)
           end
 
           ActiveRecord::Base.connected_to(role: :writing) do
-            assert_equal ActiveRecord::Base.connection_handler, ActiveRecord::Base.connection_handlers[:"db/primary.sqlite3"]
+            assert_equal ActiveRecord::Base.connection_handler, ActiveRecord::Base.connection_handlers["ActiveRecord::Base"]
             assert_equal :writing, ActiveRecord::Base.current_role
             assert ActiveRecord::Base.connected_to?(role: :writing)
             assert_not ActiveRecord::Base.connected_to?(role: :reading)
@@ -129,19 +129,19 @@ module ActiveRecord
 
           config = {
             "default_env" => {
-              "readonly" => { "adapter" => "sqlite3", "database" => "db/primary.sqlite3", "user" => "root_readonly" },
-              "primary"  => { "adapter" => "sqlite3", "database" => "db/primary.sqlite3", "user" => "root" }
+              "readonly" => { "adapter" => "sqlite3", "database" => "db/readonly.sqlite3" },
+              "primary"  => { "adapter" => "sqlite3", "database" => "db/primary.sqlite3" }
             }
           }
           @prev_configs, ActiveRecord::Base.configurations = ActiveRecord::Base.configurations, config
 
           ActiveRecord::Base.connects_to(database: { default: :primary, readonly: :readonly })
 
-          assert_not_nil pool = ActiveRecord::Base.connection_handlers[:"db/primary.sqlite3"].retrieve_connection_pool(:default)
+          assert_not_nil pool = ActiveRecord::Base.connection_handlers["ActiveRecord::Base"].retrieve_connection_pool(:default)
           assert_equal "db/primary.sqlite3", pool.db_config.database
 
-          assert_not_nil pool = ActiveRecord::Base.connection_handlers[:"db/primary.sqlite3"].retrieve_connection_pool(:default)
-          assert_equal "db/primary.sqlite3", pool.db_config.database
+          assert_not_nil pool = ActiveRecord::Base.connection_handlers["ActiveRecord::Base"].retrieve_connection_pool(:readonly)
+          assert_equal "db/readonly.sqlite3", pool.db_config.database
         ensure
           ActiveRecord::Base.configurations = @prev_configs
           ActiveRecord::Base.establish_connection(:arunit)
@@ -157,7 +157,7 @@ module ActiveRecord
             assert ActiveRecord::Base.connected_to?(role: :writing)
 
             handler = ActiveRecord::Base.connection_handler
-            assert_equal handler, ActiveRecord::Base.connection_handlers[:bar]
+            assert_equal handler, ActiveRecord::Base.connection_handlers["ActiveRecord::Base"]
 
             assert_not_nil pool = handler.retrieve_connection_pool(:writing)
             assert_equal({ adapter: "postgresql", database: "bar", host: "localhost" }, pool.db_config.configuration_hash)
@@ -177,7 +177,7 @@ module ActiveRecord
             assert ActiveRecord::Base.connected_to?(role: :writing)
 
             handler = ActiveRecord::Base.connection_handler
-            assert_equal handler, ActiveRecord::Base.connection_handlers[:"db/readonly.sqlite3"]
+            assert_equal handler, ActiveRecord::Base.connection_handlers["ActiveRecord::Base"]
 
             assert_not_nil pool = handler.retrieve_connection_pool(:writing)
             assert_equal(config, pool.db_config.configuration_hash)
@@ -217,7 +217,7 @@ module ActiveRecord
             assert ActiveRecord::Base.connected_to?(role: :writing)
 
             handler = ActiveRecord::Base.connection_handler
-            assert_equal handler, ActiveRecord::Base.connection_handlers[:"db/animals.sqlite3"]
+            assert_equal handler, ActiveRecord::Base.connection_handlers["ActiveRecord::Base"]
 
             assert_not_nil pool = handler.retrieve_connection_pool(:writing)
             assert_equal(config["default_env"]["animals"], pool.db_config.configuration_hash)
@@ -244,7 +244,7 @@ module ActiveRecord
             assert ActiveRecord::Base.connected_to?(role: :writing)
 
             handler = ActiveRecord::Base.connection_handler
-            assert_equal handler, ActiveRecord::Base.connection_handlers[:"db/primary.sqlite3"]
+            assert_equal handler, ActiveRecord::Base.connection_handlers["ActiveRecord::Base"]
 
             assert_not_nil pool = handler.retrieve_connection_pool(:writing)
             assert_equal(config["default_env"]["primary"], pool.db_config.configuration_hash)
@@ -266,7 +266,7 @@ module ActiveRecord
           ActiveRecord::Base.connects_to database: { writing: :development }
 
           assert_equal 1, ActiveRecord::Base.connection_handlers.size
-          assert_equal ActiveRecord::Base.connection_handler, ActiveRecord::Base.connection_handlers[:"db/primary.sqlite3"]
+          assert_equal ActiveRecord::Base.connection_handler, ActiveRecord::Base.connection_handlers["ActiveRecord::Base"]
           assert_equal :writing, ActiveRecord::Base.current_role
           assert ActiveRecord::Base.connected_to?(role: :writing)
         ensure
@@ -284,7 +284,7 @@ module ActiveRecord
 
           ActiveRecord::Base.connects_to database: { writing: :development, reading: :development_readonly }
 
-          assert_not_nil pool = ActiveRecord::Base.connection_handlers[:"db/primary.sqlite3"].retrieve_connection_pool(:writing)
+          assert_not_nil pool = ActiveRecord::Base.connection_handlers["ActiveRecord::Base"].retrieve_connection_pool(:writing)
           assert_equal "db/primary.sqlite3", pool.db_config.database
         ensure
           ActiveRecord::Base.configurations = @prev_configs
@@ -302,8 +302,8 @@ module ActiveRecord
 
           assert_equal(
             [
-              ActiveRecord::Base.connection_handlers[:"db/primary.sqlite3"].retrieve_connection_pool(:writing),
-              ActiveRecord::Base.connection_handlers[:"db/primary.sqlite3"].retrieve_connection_pool(:reading)
+              ActiveRecord::Base.connection_handlers["ActiveRecord::Base"].retrieve_connection_pool(:writing),
+              ActiveRecord::Base.connection_handlers["ActiveRecord::Base"].retrieve_connection_pool(:reading)
             ],
             result
           )
@@ -314,8 +314,8 @@ module ActiveRecord
       end
 
       def test_connection_pools
-        assert_equal([@rw_pool], @handlers[:primary].connection_pools)
-        assert_equal([@ro_pool], @handlers[:animals].connection_pools)
+        assert_equal([@rw_pool], @handlers["Base"].connection_pools)
+        assert_equal([@ro_pool], @handlers["Animal"].connection_pools)
       end
 
       def test_retrieve_connection

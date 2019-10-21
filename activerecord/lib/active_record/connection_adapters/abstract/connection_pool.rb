@@ -1108,11 +1108,10 @@ module ActiveRecord
 
         unless pool
           # multiple database application
-          if ActiveRecord::Base.connection_handler != ActiveRecord::Base.default_connection_handler
-            database = ActiveRecord::Base.connection_handler.connection_pool_list.first.db_config.database
-            raise ConnectionNotEstablished, "No connection pool with '#{role}' role found for the '#{database}' database."
+          if connection = ActiveRecord::Base.connection_handler.connection_pool_list.first
+            raise ConnectionNotEstablished, "No connection pool with '#{role}' role found for the '#{connection.db_config.database}' database."
           else
-            raise ConnectionNotEstablished, "No connection pool with '#{role}' found."
+            raise ConnectionNotEstablished, "No connection pool with '#{role}' role found."
           end
         end
 

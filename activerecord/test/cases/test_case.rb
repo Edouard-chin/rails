@@ -31,7 +31,10 @@ module ActiveRecord
     end
 
     def before_setup
-      @original_ar_connection_handlers = ActiveRecord::Base.connection_handlers.dup
+      @original_ar_connection_handlers = ActiveRecord::Base.connection_handlers.each_with_object({}) do |(name, handler), h|
+        h[name] = handler.dup
+        h[name].instance_variable_set(:@role_to_config, handler.instance_variable_get(:@role_to_config).dup)
+      end
       super
     end
 
@@ -39,6 +42,7 @@ module ActiveRecord
       super
       ActiveRecord::Base.connection_handlers = @original_ar_connection_handlers
       ActiveRecord::Base.establish_connection(:arunit) rescue nil
+      ActiveRecord::Base.default_connection_handler = ActiveRecord::Base.connection_handlers['ActiveRecord::Base']
     end
 
     def capture_sql

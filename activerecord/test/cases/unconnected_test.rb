@@ -37,7 +37,7 @@ class TestUnconnectedAdapter < ActiveRecord::TestCase
       TestRecord.find(1)
     end
 
-    assert_equal "No connection pool with 'writing' found.", error.message
+    assert_equal "No connection pool with 'writing' role found.", error.message
   end
 
   def test_underlying_adapter_no_longer_active

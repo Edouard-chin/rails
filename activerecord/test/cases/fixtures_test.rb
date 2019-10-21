@@ -1397,14 +1397,14 @@ class MultipleDatabaseFixturesTest < ActiveRecord::TestCase
       ActiveRecord::Base.connects_to database: { writing: :arunit, reading: :arunit }
 
       rw_conn = ActiveRecord::Base.connection
-      ro_conn = ActiveRecord::Base.connection_handlers[:activerecord_unittest].retrieve_connection(:reading)
+      ro_conn = ActiveRecord::Base.connection_handlers["ActiveRecord::Base"].retrieve_connection(:reading)
 
       assert_not_equal rw_conn, ro_conn
 
       enlist_fixture_connections
 
       rw_conn = ActiveRecord::Base.connection
-      ro_conn = ActiveRecord::Base.connection_handlers[:activerecord_unittest].retrieve_connection(:reading)
+      ro_conn = ActiveRecord::Base.connection_handlers["ActiveRecord::Base"].retrieve_connection(:reading)
 
       assert_equal rw_conn, ro_conn
     end

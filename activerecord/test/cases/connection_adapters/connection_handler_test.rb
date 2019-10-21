@@ -210,19 +210,19 @@ module ActiveRecord
         assert_equal([@pool], @handler.connection_pools)
       end
 
-      # def test_a_class_using_custom_pool_and_switching_back_to_primary
-      #   klass2 = Class.new(Base) { def self.name; "klass2"; end }
+      def test_a_class_using_custom_pool_and_switching_back_to_primary
+        klass2 = Class.new(Base) { def self.name; "klass2"; end }
 
-      #   assert_same klass2.connection, ActiveRecord::Base.connection
+        assert_same klass2.connection, ActiveRecord::Base.connection
 
-      #   pool = klass2.establish_connection(ActiveRecord::Base.connection_config)
-      #   assert_same klass2.connection, pool.connection
-      #   assert_not_same klass2.connection, ActiveRecord::Base.connection
+        pool = klass2.establish_connection(ActiveRecord::Base.connection_config)
+        assert_same klass2.connection, pool.connection
+        assert_not_same klass2.connection, ActiveRecord::Base.connection
 
-      #   klass2.remove_connection
+        klass2.remove_connection
 
-      #   assert_same klass2.connection, ActiveRecord::Base.connection
-      # end
+        assert_same klass2.connection, ActiveRecord::Base.connection
+      end
 
       class ApplicationRecord < ActiveRecord::Base
         self.abstract_class = true

@@ -62,7 +62,7 @@ class QueryCacheTest < ActiveRecord::TestCase
     )
 
     mw = middleware { |env|
-      ro_conn = ActiveRecord::Base.connection_handlers[:activerecord_unittest].connection_pool_list.first.connection
+      ro_conn = ActiveRecord::Base.connection_handlers["ActiveRecord::Base"].connection_pool_list.first.connection
       assert_predicate ActiveRecord::Base.connection, :query_cache_enabled
       assert_predicate ro_conn, :query_cache_enabled
     }

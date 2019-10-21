@@ -295,7 +295,7 @@ module ActiveRecord
         old_configurations = ActiveRecord::Base.configurations
         ActiveRecord::Base.configurations = @configurations
 
-        stub_any_instance(ActiveRecord::ConnectionAdapters::ConnectionHandler) do |instance|
+        stub_any_instance(ActiveRecord::ConnectionAdapters::ConnectionHandler, instance: ActiveRecord::Base.connection_handler) do |instance|
           instance.stub(:establish_connection, nil) do
             yield
           end
@@ -328,7 +328,7 @@ module ActiveRecord
       end
     end
 
-    def test_creates_current_environment_database_with_url_dudek
+    def test_creates_current_environment_database_with_url
       with_stubbed_configurations_establish_connection do
         assert_called_with(
           ActiveRecord::Tasks::DatabaseTasks,
@@ -359,7 +359,7 @@ module ActiveRecord
       end
     end
 
-    def test_creates_test_and_development_databases_when_rails_env_is_development
+    def test_creates_test_and_development_databases_when_rails_env_is_development_dudek
       old_env = ENV["RAILS_ENV"]
       ENV["RAILS_ENV"] = "development"
 
@@ -400,7 +400,7 @@ module ActiveRecord
         old_configurations = ActiveRecord::Base.configurations
         ActiveRecord::Base.configurations = @configurations
 
-        stub_any_instance(ActiveRecord::ConnectionAdapters::ConnectionHandler) do |instance|
+        stub_any_instance(ActiveRecord::ConnectionAdapters::ConnectionHandler, instance: ActiveRecord::Base.connection_handler) do |instance|
           instance.stub(:establish_connection, nil) do
             yield
           end
@@ -519,7 +519,7 @@ module ActiveRecord
         old_configurations = ActiveRecord::Base.configurations
         ActiveRecord::Base.configurations = @configurations
 
-        stub_any_instance(ActiveRecord::ConnectionAdapters::ConnectionHandler) do |instance|
+        stub_any_instance(ActiveRecord::ConnectionAdapters::ConnectionHandler, instance: ActiveRecord::Base.connection_handler) do |instance|
           instance.stub(:establish_connection, nil) do
             yield
           end

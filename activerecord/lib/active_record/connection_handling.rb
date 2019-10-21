@@ -58,8 +58,8 @@ module ActiveRecord
     def assign_connection_handler(database_name)
       return unless database_name
 
-      connection_handlers[database_name.to_sym] ||= ConnectionAdapters::ConnectionHandler.new
-      @connection_handler = connection_handlers[database_name.to_sym]
+      connection_handlers[name] ||= ConnectionAdapters::ConnectionHandler.new
+      @connection_handler = connection_handlers[name]
     end
 
     # Connects a model to the databases specified. The +database+ keyword
@@ -242,7 +242,9 @@ module ActiveRecord
 
     def remove_connection(role = current_role)
       if defined?(@connection_handler) && @connection_handler
-        connection_handler.remove_connection(role)
+        configuration_hash = connection_handler.remove_connection(role)
+        self.connection_handler = nil
+        configuration_hash
       end
     end
 

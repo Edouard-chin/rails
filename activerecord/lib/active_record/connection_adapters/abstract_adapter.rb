@@ -127,11 +127,13 @@ module ActiveRecord
         @schema_migration ||= begin
                                 conn = self
                                 db_config = conn.pool.db_config
-                                name = "#{db_config.spec_name}::SchemaMigration"
+                                name = "#{db_config.database}::SchemaMigration"
 
                                 Class.new(ActiveRecord::SchemaMigration) do
                                   define_singleton_method(:name) { name }
                                   define_singleton_method(:to_s) { name }
+
+                                  establish_connection(db_config.configuration_hash)
                                 end
                               end
       end
