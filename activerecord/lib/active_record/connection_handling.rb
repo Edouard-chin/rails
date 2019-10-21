@@ -55,7 +55,7 @@ module ActiveRecord
       connection_handler.establish_connection(config_hash)
     end
 
-    def assign_connection_handler(database_name)
+    def assign_connection_handler(database_name, db_config: nil)
       return unless database_name
 
       connection_handlers[name] ||= ConnectionAdapters::ConnectionHandler.new

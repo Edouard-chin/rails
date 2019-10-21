@@ -179,7 +179,6 @@ module ActiveRecord
       setup_shared_connection_pool
 
       ActiveRecord::Base.connection_handlers.each_with_object([]) do |(db, handler), acc|
-        next if db =~ /SchemaMigration/
         acc << handler.retrieve_connection(ActiveRecord::Base.writing_role)
       end
     end
