@@ -9,13 +9,47 @@ module ActiveRecord
   # ActiveRecord::DatabaseConfigurations returns an array of DatabaseConfig
   # objects (either a HashConfig or UrlConfig) that are constructed from the
   # application's database configuration hash or URL string.
+
+  class Topology
+    attr_reader :configurations
+
+    def initialize
+      @configurations = {}
+    end
+
+    def add_schema(schema_name, schema)
+      @configurations[schema_name] = schema
+    end
+  end
+
+  class TopologySchema
+    attr_reader :reading_role, :writing_role
+
+    def add_role(type, role)
+      case type
+      when ActiveRecord::Base.reading_role
+        @reading_role = role
+      when ActiveRecord::Base.writing_role
+        @writing_role = role
+      end
+    end
+
+    def roles
+      {
+        ActiveRecord::Base.reading_role => reading_role,
+        ActiveRecord::Base.writing_role => writing_role,
+      }.compact
+    end
+  end
+
   class DatabaseConfigurations
     class InvalidConfigurationError < StandardError; end
 
-    attr_reader :configurations
+    attr_reader :configurations, :topology
     delegate :any?, to: :configurations
 
     def initialize(configurations = {})
+      @topology = Topology.new
       @configurations = build_configs(configurations)
     end
 
@@ -137,20 +171,33 @@ module ActiveRecord
       end
 
       def walk_configs(env_name, config)
-        config.map do |spec_name, sub_config|
-          build_db_config_from_raw_config(env_name, spec_name.to_s, sub_config)
-        end
+        config.map do |schema, sub_config|
+          build_db_config_from_raw_config(env_name, schema.to_s, sub_config)
+        end.flatten
       end
 
-      def build_db_config_from_raw_config(env_name, spec_name, config)
+      def build_db_config_from_raw_config(env_name, schema, config)
         case config
         when String
-          build_db_config_from_string(env_name, spec_name, config)
+          build_db_config_from_string(env_name, schema, config)
         when Hash
-          build_db_config_from_hash(env_name, spec_name, config.symbolize_keys)
+          create_topology(env_name, schema, config)
+          hash_config = []
+          hash_config << build_db_config_from_hash(env_name, schema, config['writing'].symbolize_keys)
+          hash_config << build_db_config_from_hash(env_name, schema, config['reading'].symbolize_keys)
         else
           raise InvalidConfigurationError, "'{ #{env_name} => #{config} }' is not a valid configuration. Expected '#{config}' to be a URL string or a Hash."
         end
+      end
+
+      def create_topology(env_name, schema_name, config)
+        schema = TopologySchema.new
+        config.each do |role_name, subconfig|
+          role = build_db_config_from_hash(env_name, schema_name, subconfig)
+          schema.add_role(role_name.to_sym, role)
+        end
+
+        @topology.add_schema(schema_name, schema)
       end
 
       def build_db_config_from_string(env_name, spec_name, config)
@@ -163,15 +210,15 @@ module ActiveRecord
         end
       end
 
-      def build_db_config_from_hash(env_name, spec_name, config)
+      def build_db_config_from_hash(env_name, schema, config)
         if config.has_key?(:url)
           url = config[:url]
           config_without_url = config.dup
           config_without_url.delete :url
 
-          UrlConfig.new(env_name, spec_name, url, config_without_url)
+          UrlConfig.new(env_name, schema, url, config_without_url)
         else
-          HashConfig.new(env_name, spec_name, config)
+          HashConfig.new(env_name, schema, config)
         end
       end
 

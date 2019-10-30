@@ -115,8 +115,7 @@ module ActiveRecord
           db_config = configurations.find_db_config(env_name)
 
           if db_config
-            config = db_config.configuration_hash
-            DatabaseConfigurations::HashConfig.new(db_config.env_name, db_config.spec_name, config)
+            db_config
           else
             raise AdapterNotSpecified, <<~MSG
             The `#{env_name}` database is not configured for the `#{ActiveRecord::ConnectionHandling::DEFAULT_ENV.call}` environment.

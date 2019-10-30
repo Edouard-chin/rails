@@ -67,16 +67,15 @@ module ActiveRecord
     #   end
     #
     # Returns an array of established connections.
-    def connects_to(database: {})
+    def connects_to(schema_name:)
       connections = []
+      schema = Base.configurations.topology.configurations[schema_name.to_s]
 
-      database.each do |role, database_key|
-        db_config = resolve_config_for_connection(database_key)
-        assign_connection_handler
-        connections << connection_handler.establish_connection(db_config, role: role)
+      assign_connection_handler
+
+      schema.roles.each do |role_name, db_config|
+        connections << connection_handler.establish_connection(db_config, role: role_name)
       end
-
-      connections
     end
 
     # Connects to a database or role (ex writing, reading, or another
