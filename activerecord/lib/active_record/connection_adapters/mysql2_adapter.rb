@@ -7,28 +7,25 @@ gem "mysql2", "~> 0.5"
 require "mysql2"
 
 module ActiveRecord
-  module ConnectionHandling # :nodoc:
-    ER_BAD_DB_ERROR = 1049
+  Base.singleton_class.define_method(:mysql2_connection) do |config|
+    config = config.symbolize_keys
+    config[:flags] ||= 0
 
-    # Establishes a connection to the database that's used by all Active Record objects.
-    def mysql2_connection(config)
-      config = config.symbolize_keys
-      config[:flags] ||= 0
+    if config[:flags].kind_of? Array
+      config[:flags].push "FOUND_ROWS"
+    else
+      config[:flags] |= Mysql2::Client::FOUND_ROWS
+    end
 
-      if config[:flags].kind_of? Array
-        config[:flags].push "FOUND_ROWS"
-      else
-        config[:flags] |= Mysql2::Client::FOUND_ROWS
-      end
+    client = Mysql2::Client.new(config)
+    ConnectionAdapters::Mysql2Adapter.new(client, logger, nil, config)
+  rescue Mysql2::Error => error
+    er_bad_db_error = 1049
 
-      client = Mysql2::Client.new(config)
-      ConnectionAdapters::Mysql2Adapter.new(client, logger, nil, config)
-    rescue Mysql2::Error => error
-      if error.error_number == ER_BAD_DB_ERROR
-        raise ActiveRecord::NoDatabaseError
-      else
-        raise
-      end
+    if error.error_number == er_bad_db_error
+      raise ActiveRecord::NoDatabaseError
+    else
+      raise
     end
   end
 

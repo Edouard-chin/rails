@@ -106,6 +106,21 @@ module ActiveRecord
     autoload :Type
   end
 
+  module Sharding
+    extend ActiveSupport::Autoload
+
+    autoload :ConnectionHandling
+    autoload :Integration
+
+    module ConnectionAdapters
+      extend ActiveSupport::Autoload
+
+      autoload :Resolver
+      autoload :ConnectionHandler
+      autoload :Role
+    end
+  end
+
   module Coders
     autoload :YAMLColumn, "active_record/coders/yaml_column"
     autoload :JSON, "active_record/coders/json"

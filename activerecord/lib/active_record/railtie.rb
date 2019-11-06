@@ -29,6 +29,7 @@ module ActiveRecord
     config.active_record.use_schema_cache_dump = true
     config.active_record.maintain_test_schema = true
     config.active_record.has_many_inversing = false
+    config.active_record.use_sharding = true
 
     config.active_record.sqlite3 = ActiveSupport::OrderedOptions.new
     config.active_record.sqlite3.represent_boolean_as_integer = nil
@@ -202,6 +203,14 @@ end_error
         self.connection_handlers = { writing_role => ActiveRecord::Base.default_connection_handler }
         self.configurations = Rails.application.config.database_configuration
         establish_connection
+      end
+    end
+
+    initializer "active_record.connection_implementation" do
+      next unless config.active_record.delete(:use_sharding)
+
+      ActiveSupport.on_load(:active_record) do |base|
+        Sharding::Integration.take_over(base)
       end
     end
 
