@@ -594,7 +594,7 @@ module Rails
 
         super unless Rails.autoloaders.zeitwerk_enabled?
         config.eager_load_namespaces.each do |namespace|
-          namespace.eager_load! unless namespace == self
+          namespace.eager_load! unless namespace == self.class
         end
 
         @eager_loaded = true
