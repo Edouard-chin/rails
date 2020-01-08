@@ -37,19 +37,12 @@ module ActiveJob
       deserialize_arguments_if_needed
       successfully_performed = false
 
-      run_callbacks :perform do
-        args = arguments
-        options = args.extract_options!
-        if options.empty?
-          perform(*args)
-        else
-          perform(*args, **options)
-        end
-        successfully_performed = true
+      job = run_callbacks :perform do
+        perform(*arguments).tap { successfully_performed = true }
       end
 
       warn_against_after_callbacks_execution_deprecation(_perform_callbacks) unless successfully_performed
-      successfully_performed
+      job
     rescue => exception
       rescue_with_handler(exception) || raise
     end
