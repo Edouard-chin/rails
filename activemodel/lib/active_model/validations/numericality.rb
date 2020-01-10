@@ -22,7 +22,7 @@ module ActiveModel
         end
       end
 
-      def validate_each(record, attr_name, value, precision: Float::DIG)
+      def validate_each(record, attr_name, value)
         came_from_user = :"#{attr_name}_came_from_user?"
 
         if record.respond_to?(came_from_user)
@@ -43,7 +43,7 @@ module ActiveModel
           raw_value = value
         end
 
-        unless is_number?(raw_value, precision)
+        unless is_number?(raw_value)
           record.errors.add(attr_name, :not_a_number, **filtered_options(raw_value))
           return
         end
@@ -53,7 +53,7 @@ module ActiveModel
           return
         end
 
-        value = parse_as_number(raw_value, precision)
+        value = parse_as_number(raw_value)
 
         options.slice(*CHECKS.keys).each do |option, option_value|
           case option
@@ -69,7 +69,7 @@ module ActiveModel
               option_value = record.send(option_value)
             end
 
-            option_value = parse_as_number(option_value, precision)
+            option_value = parse_as_number(option_value)
 
             unless value.send(CHECKS[option], option_value)
               record.errors.add(attr_name, option, **filtered_options(value).merge!(count: option_value))
@@ -79,22 +79,22 @@ module ActiveModel
       end
 
     private
-      def parse_as_number(raw_value, precision)
+      def is_number?(raw_value)
+        !parse_as_number(raw_value).nil?
+      rescue ArgumentError, TypeError
+        false
+      end
+
+      def parse_as_number(raw_value)
         if raw_value.is_a?(Float)
-          raw_value.to_d(precision)
+          raw_value.to_d
         elsif raw_value.is_a?(Numeric)
           raw_value
         elsif is_integer?(raw_value)
           raw_value.to_i
         elsif !is_hexadecimal_literal?(raw_value)
-          Kernel.Float(raw_value).to_d(precision)
+          Kernel.Float(raw_value).to_d
         end
-      end
-
-      def is_number?(raw_value, precision)
-        !parse_as_number(raw_value, precision).nil?
-      rescue ArgumentError, TypeError
-        false
       end
 
       def is_integer?(raw_value)
@@ -132,8 +132,7 @@ module ActiveModel
       # Validates whether the value of the specified attribute is numeric by
       # trying to convert it to a float with Kernel.Float (if <tt>only_integer</tt>
       # is +false+) or applying it to the regular expression <tt>/\A[\+\-]?\d+\z/</tt>
-      # (if <tt>only_integer</tt> is set to +true+). Precision of Kernel.Float values
-      # are guaranteed up to 15 digits.
+      # (if <tt>only_integer</tt> is set to +true+).
       #
       #   class Person < ActiveRecord::Base
       #     validates_numericality_of :value, on: :create
