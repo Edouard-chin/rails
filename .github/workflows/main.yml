@@ -1,0 +1,22 @@
+# .github/workflows/example.yml
+
+name: Merge upstream main branch
+on:
+  schedule:
+     # actually, ~5 minutes is the highest
+     # effective frequency you will get
+    - cron:  '0 * * * *'
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Merge upstream
+        run: |
+          git config --global user.name 'Edouard Chin'
+          git config --global user.email 'chin.edouard@gmail.com'
+
+          git remote add upstream https://github.com/rails/rails.git
+          git pull upstream main
+          git push origin main
+          
