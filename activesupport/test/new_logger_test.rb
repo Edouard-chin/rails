@@ -8,7 +8,7 @@ require "tempfile"
 require "tmpdir"
 require "concurrent/atomics"
 
-class LoggerTest < ActiveSupport::TestCase
+class NewLoggerTest < ActiveSupport::TestCase
   include MultibyteTestHelpers
 
   Logger = ActiveSupport::NewLogger
