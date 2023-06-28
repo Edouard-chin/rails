@@ -3,14 +3,15 @@
 require_relative "abstract_unit"
 
 module ActiveSupport
-  class BroadcastLoggerTest < TestCase
+  class NewBroadcastLoggerTest < TestCase
     attr_reader :logger, :log1, :log2
 
     setup do
       @log1 = FakeLogger.new
       @log2 = FakeLogger.new
-      @log1.extend Logger.broadcast @log2
-      @logger = @log1
+      @logger = BroadcastLogger.new(File::NULL)
+      @logger.broadcast_to(@log1)
+      @logger.broadcast_to(@log2)
     end
 
     Logger::Severity.constants.each do |level_name|
@@ -39,9 +40,12 @@ module ActiveSupport
       assert_equal %w{ foo }, log2.chevrons
     end
 
-    test "#level= assigns the level to all loggers" do
-      assert_equal ::Logger::DEBUG, logger.level
-      logger.level = ::Logger::FATAL
+    # Allowing to modify the level on all broadcasted logger using
+    # the regular "level=" is confusing IMO.
+    # Created a new "broadcast_level=" for more explicitness.
+    test "#broadcast_level= assigns the level to all loggers" do
+      assert_equal ::Logger::DEBUG, log1.level
+      logger.broadcast_level = ::Logger::FATAL
 
       assert_equal ::Logger::FATAL, log1.level
       assert_equal ::Logger::FATAL, log2.level
@@ -55,16 +59,13 @@ module ActiveSupport
       assert_equal ::Logger::FATAL, log2.progname
     end
 
+    # This new implementation doesn't allow modifying the formatter
+    # on all loggers. This was a main source of confusion and issue.
     test "#formatter= assigns to all the loggers" do
-      assert_nil logger.formatter
-      logger.formatter = ::Logger::FATAL
-
-      assert_equal ::Logger::FATAL, log1.formatter
-      assert_equal ::Logger::FATAL, log2.formatter
     end
 
     test "#local_level= assigns the local_level to all loggers" do
-      assert_equal ::Logger::DEBUG, logger.local_level
+      assert_equal ::Logger::DEBUG, log1.local_level
       logger.local_level = ::Logger::FATAL
 
       assert_equal ::Logger::FATAL, log1.local_level
