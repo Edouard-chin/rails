@@ -42,12 +42,44 @@ module ActiveSupport
     end
 
     def add(...)
-      dispatch do |logger|
-        logger.processors.unshift(processors)
-
+      dispatch_with_processors do |logger|
         logger.add(...)
-      ensure
-        logger.processors.shift(processors.count)
+      end
+    end
+
+    def debug(...)
+      dispatch_with_processors do |logger|
+        logger.debug(...)
+      end
+    end
+
+    def info(...)
+      dispatch_with_processors do |logger|
+        logger.info(...)
+      end
+    end
+
+    def warn(...)
+      dispatch_with_processors do |logger|
+        logger.warn(...)
+      end
+    end
+
+    def error(...)
+      dispatch_with_processors do |logger|
+        logger.error(...)
+      end
+    end
+
+    def fatal(...)
+      dispatch_with_processors do |logger|
+        logger.fatal(...)
+      end
+    end
+
+    def unknown(...)
+      dispatch_with_processors do |logger|
+        logger.unknown(...)
       end
     end
 
@@ -75,6 +107,16 @@ module ActiveSupport
 
     def dispatch
       @broadcasts.each { |logger| yield(logger) }
+    end
+
+    def dispatch_with_processors
+      @broadcasts.each do |logger|
+        logger.processors.unshift(processors)
+
+        yield(logger)
+      ensure
+        logger.processors.shift(processors.count)
+      end
     end
   end
 end

@@ -81,7 +81,7 @@ module ActiveSupport
     autoload :OrderedOptions
     autoload :StringInquirer
     autoload :EnvironmentInquirer
-    autoload :TaggedLogging
+    autoload :TaggedLogging, "active_support/new_tagged_logging"
     autoload :XmlMini
     autoload :ArrayInquirer
   end
