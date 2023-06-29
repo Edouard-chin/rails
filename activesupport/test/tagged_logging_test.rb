@@ -225,6 +225,22 @@ class TaggedLoggingWithoutBlockTest < ActiveSupport::TestCase
     assert_equal "[OMG] Broadcasting...\n", broadcast_output.string
   end
 
+  test "#tagged without a block doesn't leak to other loggers" do
+    sink1 = StringIO.new
+    logger1= ActiveSupport::Logger.new(sink1).extend(ActiveSupport::TaggedLogging)
+    sink2 = StringIO.new
+    logger2= ActiveSupport::Logger.new(sink2).extend(ActiveSupport::TaggedLogging)
+    broadcast_logger = ActiveSupport::BroadcastLogger.new.extend(ActiveSupport::TaggedLogging)
+    broadcast_logger.broadcast_to(logger1, logger2)
+
+    broadcast_logger.tagged('tag')
+    broadcast_logger.info('text')
+
+    assert_equal("text\n", sink1.string)
+    assert_equal("text\n", sink2.string)
+  end
+
+
   test "accepts non-String objects" do
     @logger.tagged("tag") { @logger.info [1, 2, 3] }
     assert_equal "[tag] [1, 2, 3]\n", @output.string

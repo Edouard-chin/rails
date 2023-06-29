@@ -108,7 +108,7 @@ module ActiveSupport
     end
 
     # Remove a logger from the broadcast. When a logger is removed, messages sent to
-    # the broadcast will no longer be written to the sink.
+    # the broadcast will no longer be written to its sink.
     #
     # @param logger [Logger]
     def stop_broadcasting_to(logger)
