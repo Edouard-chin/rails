@@ -3,7 +3,7 @@
 require_relative "abstract_unit"
 
 module ActiveSupport
-  class NewBroadcastLoggerTest < TestCase
+  class BroadcastLoggerTest < TestCase
     attr_reader :logger, :log1, :log2
 
     setup do
@@ -39,12 +39,9 @@ module ActiveSupport
       assert_equal %w{ foo }, log2.chevrons
     end
 
-    # Allowing to modify the level on all broadcasted logger using
-    # the regular "level=" is confusing IMO.
-    # Created a new "broadcast_level=" for more explicitness.
-    test "#broadcast_level= assigns the level to all loggers" do
+    test "#level_level= assigns the level to all loggers" do
       assert_equal ::Logger::DEBUG, log1.level
-      logger.broadcast_level = ::Logger::FATAL
+      logger.level = ::Logger::FATAL
 
       assert_equal ::Logger::FATAL, log1.level
       assert_equal ::Logger::FATAL, log2.level
@@ -56,11 +53,6 @@ module ActiveSupport
 
       assert_equal ::Logger::FATAL, log1.progname
       assert_equal ::Logger::FATAL, log2.progname
-    end
-
-    # This new implementation doesn't allow modifying the formatter
-    # on all loggers. This was a main source of confusion and issue.
-    test "#formatter= assigns to all the loggers" do
     end
 
     test "#local_level= assigns the local_level to all loggers" do

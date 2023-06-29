@@ -89,9 +89,7 @@ module ActiveSupport
       dispatch { |logger| logger.progname = progname }
     end
 
-    # Remove and override `level=`. See comment on top of file. The contract on the BroadcastLevel
-    # is to delegate everything to the broadcasts.
-    def broadcast_level=(level)
+    def level=(level)
       dispatch { |logger| logger.level = level }
     end
 
