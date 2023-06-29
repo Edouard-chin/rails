@@ -134,7 +134,7 @@ module ActiveSupport
       if block_given?
         formatter.tagged(*tags) { yield self }
       else
-        logger = ActiveSupport::OldTaggedLogging.new(self)
+        logger = ActiveSupport::TaggedLogging.new(self)
         logger.formatter.extend LocalTagStorage
         logger.push_tags(*formatter.current_tags, *tags)
         logger

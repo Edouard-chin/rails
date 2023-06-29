@@ -39,7 +39,7 @@ module ActiveSupport
       assert_equal %w{ foo }, log2.chevrons
     end
 
-    test "#level_level= assigns the level to all loggers" do
+    test "#level= assigns the level to all loggers" do
       assert_equal ::Logger::DEBUG, log1.level
       logger.level = ::Logger::FATAL
 
