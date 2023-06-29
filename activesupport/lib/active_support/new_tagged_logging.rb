@@ -27,18 +27,17 @@ module ActiveSupport
   # This is used by the default Rails.logger as configured by Railties to make
   # it easy to stamp log lines with subdomains, request ids, and anything else
   # to aid debugging of multi-user production applications.
-  module OldTaggedLogging
-    module Formatter # :nodoc:
-      # This method is invoked when a log event occurs.
-      def call(severity, timestamp, progname, msg)
-        super(severity, timestamp, progname, tag_stack.format_message(msg))
-      end
-
+  module TaggedLogging
+    class TagProcessor
       def tagged(*tags)
-        pushed_count = tag_stack.push_tags(tags).size
+        pushed_count = push_tags(tags).size
         yield self
       ensure
         pop_tags(pushed_count)
+      end
+
+      def call(msg)
+        tag_stack.format_message(msg)
       end
 
       def push_tags(*tags)
@@ -114,29 +113,81 @@ module ActiveSupport
       end
     end
 
-    def self.new(logger)
-      logger = logger.clone
+    attr_accessor :tag_processor
+    delegate :push_tags, :pop_tags, :clear_tags!, to: :tag_processor
 
-      if logger.formatter
-        logger.formatter = logger.formatter.clone
-      else
-        # Ensure we set a default formatter so we aren't extending nil!
-        logger.formatter = ActiveSupport::Logger::SimpleFormatter.new
-      end
+    def self.extended(base)
+      base.tag_processor = TagProcessor.new
+      base.extend(ActiveSupport::LogProcessor)
 
-      logger.formatter.extend Formatter
-      logger.extend(self)
+      base.processors << base.tag_processor
     end
 
-    delegate :push_tags, :pop_tags, :clear_tags!, to: :formatter
+    def self.new(logger)
+      if logger.is_a?(TaggedLogging)
+        # ActiveSupport.deprecator.warn(<<~EOM)
+        #   `ActiveSupport::TaggedLogging.new` is deprecated.
+        #    To create a new logger from an existing logger, use `logger#clone` instead.
+
+        #    Before: `new_tagged_logger = ActiveSupport::TaggedLogging.new(existing_logger)`
+        #    Now:    `new_tagged_logger = existing_logger.clone`
+        # EOM
+
+        logger.clone
+      else
+        # ActiveSupport.deprecator.warn(<<~EOM)
+        #   To create a new Logger instance with Tagging functionalities, extend
+        #   the `ActiveSupport::TaggedLogging` module.
+
+        #   Example: `my_logger.extend(ActiveSupport::TaggedLogging)`
+        # EOM
+
+        logger.extend(TaggedLogging)
+      end
+    end
+
+    # Cloning creates an issue for logger that used to be part of a broadcast.
+    # If I clone a logger, should that logger be also part of the broadcast?
+    def initialize_clone(_)
+      self.tag_processor = TagProcessor.new
+      self.processors = [tag_processor]
+
+      super
+    end
+
+    def add(...)
+      # if formatter.nil?
+      #   ActiveSupport.deprecator.warn(<<~EOM)
+      #     ActiveSupport::TaggedLogging will no longer set a default formatter on your logger.
+      #     To keep your logs unchanged in the future, use the `ActiveSupport::Logger` class or
+      #     set the `ActiveSupport::Logger::SimpleFormatter` formatter explicitely on the logger.
+
+      #     Example:
+
+      #     logger = Rails::Logger.new
+      #     logger.extend(ActiveSupport::TaggedLogging)
+
+      #     Example:
+
+      #     custom_logger = CustomLogger.new(formatter: ActiveSupport::Logger::SimpleFormatter)
+      #     custom_logger.extend(ActiveSupport::TaggedLogging)
+      #   EOM
+
+        self.formatter ||= Logger::SimpleFormatter.new
+      # end
+
+      super(...)
+    end
 
     def tagged(*tags)
       if block_given?
-        formatter.tagged(*tags) { yield self }
+        tag_processor.tagged(*tags) { yield(self) }
       else
-        logger = ActiveSupport::OldTaggedLogging.new(self)
-        logger.formatter.extend LocalTagStorage
-        logger.push_tags(*formatter.current_tags, *tags)
+        # Problem if the previous logger was part of a broadcast. See comment on #initialize_clone.
+        logger = clone
+        logger.tag_processor.extend(LocalTagStorage)
+        logger.tag_processor.push_tags(*tag_processor.current_tags, *tags)
+
         logger
       end
     end
