@@ -146,6 +146,8 @@ module ActiveSupport
       end
     end
 
+    # Cloning creates an issue for logger that used to be part of a broadcast.
+    # If I clone a logger, should that logger be also part of the broadcast?
     def initialize_clone(_)
       self.tag_processor = TagProcessor.new
       self.processors = [tag_processor]
@@ -181,6 +183,7 @@ module ActiveSupport
       if block_given?
         tag_processor.tagged(*tags) { yield(self) }
       else
+        # Problem if the previous logger was part of a broadcast. See comment on #initialize_clone.
         logger = clone
         logger.tag_processor.extend(LocalTagStorage)
         logger.tag_processor.push_tags(*tag_processor.current_tags, *tags)

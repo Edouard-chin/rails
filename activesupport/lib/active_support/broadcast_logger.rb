@@ -9,9 +9,17 @@ module ActiveSupport
     end
 
     def broadcast_to(other_logger)
+      # Should extend from LogProcessor instead. Though the best would be to not extend
+      # from anything. But if a vanilla logger gets added to the broadcast, processors
+      # added to the broadcast wouldn't apply.
       other_logger.extend(TaggedLogging)
 
       @broadcasts << other_logger
+    end
+
+    # Add a test for this
+    def stop_broadcasting_to(other_logger)
+      @broadcasts.delete(other_logger)
     end
 
     def <<(...)

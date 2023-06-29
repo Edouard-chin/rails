@@ -72,6 +72,11 @@ module ActiveSupport
       assert_equal ::Logger::FATAL, log2.local_level
     end
 
+    test "severity methods get called on all loggers" do
+      # Check that creating logger with overriden severity methods get called.
+      # AFAICT the previous implementation wouldn't call those methods, but only `add`.
+    end
+
     test "#silence does not break custom loggers" do
       new_logger = FakeLogger.new
       custom_logger = CustomLogger.new
