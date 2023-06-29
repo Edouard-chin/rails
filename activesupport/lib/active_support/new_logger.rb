@@ -21,7 +21,7 @@ module ActiveSupport
 
     def format_message(severity, datetime, progname, msg)
       processors.flatten.reverse_each do |processor|
-        msg = processor.call(msg)
+        msg = processor.call(msg, self)
       end
 
       super(severity, datetime, progname, msg)

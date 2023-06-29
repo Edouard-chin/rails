@@ -32,7 +32,27 @@ module ActiveSupport
     class TagProcessor
       include OldTaggedLogging::Formatter
 
-      def call(msg)
+      def call(msg, logger)
+        if logger.formatter.nil?
+          ActiveSupport.deprecator.warn(<<~EOM)
+            ActiveSupport::TaggedLogging will no longer set a default formatter on your logger.
+            To keep your logs unchanged in the future, use the `ActiveSupport::Logger` class or
+            set the `ActiveSupport::Logger::SimpleFormatter` formatter explicitely on the logger.
+
+            Example:
+
+            logger = Rails::Logger.new
+            logger.extend(ActiveSupport::TaggedLogging)
+
+            Example:
+
+            custom_logger = CustomLogger.new(formatter: ActiveSupport::Logger::SimpleFormatter)
+            custom_logger.extend(ActiveSupport::TaggedLogging)
+          EOM
+
+          logger.formatter ||= Logger::SimpleFormatter.new
+        end
+
         tag_stack.format_message(msg)
       end
     end
@@ -40,7 +60,7 @@ module ActiveSupport
     attr_accessor :tag_processor
     delegate :push_tags, :pop_tags, :clear_tags!, to: :tag_processor
 
-    def self.extended(base)
+    def self.extended(base) # :nodoc:
       base.tag_processor = TagProcessor.new
       base.extend(ActiveSupport::LogProcessor)
 
@@ -60,7 +80,7 @@ module ActiveSupport
         logger.clone
       else
         ActiveSupport.deprecator.warn(<<~EOM)
-          To create a new Logger instance with Tagging functionalities, extend
+          To create a new Logger instance with tagging functionalities, extend
           the `ActiveSupport::TaggedLogging` module.
 
           Example: `my_logger.extend(ActiveSupport::TaggedLogging)`
@@ -70,37 +90,11 @@ module ActiveSupport
       end
     end
 
-    # Cloning creates an issue for logger that used to be part of a broadcast.
-    # If I clone a logger, should that logger be also part of the broadcast?
-    def initialize_clone(_)
+    def initialize_clone(_) # :nodoc:
       self.tag_processor = TagProcessor.new
       self.processors = [tag_processor]
 
       super
-    end
-
-    def add(*args, &block) # :nodoc:
-      if formatter.nil?
-        ActiveSupport.deprecator.warn(<<~EOM)
-          ActiveSupport::TaggedLogging will no longer set a default formatter on your logger.
-          To keep your logs unchanged in the future, use the `ActiveSupport::Logger` class or
-          set the `ActiveSupport::Logger::SimpleFormatter` formatter explicitely on the logger.
-
-          Example:
-
-          logger = Rails::Logger.new
-          logger.extend(ActiveSupport::TaggedLogging)
-
-          Example:
-
-          custom_logger = CustomLogger.new(formatter: ActiveSupport::Logger::SimpleFormatter)
-          custom_logger.extend(ActiveSupport::TaggedLogging)
-        EOM
-
-        self.formatter ||= Logger::SimpleFormatter.new
-      end
-
-      super(*args, &block)
     end
 
     # Add +tags+ to your logs. This method can be used with or a without a block.

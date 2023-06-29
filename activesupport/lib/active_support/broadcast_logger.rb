@@ -97,13 +97,6 @@ module ActiveSupport
     # @example Broadcast yours logs to STDOUT and STDERR
     #   broadcast.broadcast_to(Logger.new(STDOUT), Logger.new(STDERR))
     def broadcast_to(*loggers)
-      # Should extend from LogProcessor instead. Though the best would be to not extend
-      # from anything. But if a vanilla logger gets added to the broadcast, processors
-      # added to the broadcast wouldn't apply.
-      loggers.each do |logger|
-        logger.extend(TaggedLogging)
-      end
-
       @broadcasts.concat(loggers)
     end
 
@@ -187,6 +180,7 @@ module ActiveSupport
 
     def dispatch_with_processors
       @broadcasts.each do |logger|
+        logger.extend(LogProcessor) unless logger.is_a?(LogProcessor)
         logger.processors.unshift(processors)
 
         yield(logger)
