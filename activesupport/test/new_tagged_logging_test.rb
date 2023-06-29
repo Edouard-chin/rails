@@ -2,7 +2,7 @@
 
 require_relative "abstract_unit"
 require "active_support/logger"
-require "active_support/tagged_logging"
+require "active_support/new_tagged_logging"
 
 class TaggedLoggingTest < ActiveSupport::TestCase
   class MyLogger < ::ActiveSupport::Logger
@@ -13,7 +13,8 @@ class TaggedLoggingTest < ActiveSupport::TestCase
 
   setup do
     @output = StringIO.new
-    @logger = ActiveSupport::TaggedLogging.new(MyLogger.new(@output))
+    @logger = MyLogger.new(@output)
+    @logger.extend(ActiveSupport::NewTaggedLogging)
   end
 
   test "sets logger.formatter if missing and extends it with a tagging API" do
@@ -111,7 +112,7 @@ class TaggedLoggingTest < ActiveSupport::TestCase
   end
 
   test "does not share the same formatter instance of the original logger" do
-    other_logger = ActiveSupport::TaggedLogging.new(@logger)
+    other_logger = @logger.clone
 
     @logger.tagged("OMG") do
       other_logger.tagged("BCX") do
