@@ -17,10 +17,10 @@ module ActiveSupport
     # - Changes made to the logger changes all logger. No way to modify only the logger.
     #   I.e. calling `level=` where I want only the main logger to be changed. Fixable with
     #   creating `broadcast_*=` methods but it doesn't feel great.
-    def initialize(...)
+    def initialize(*args, **kwargs)
       @broadcasts = []
 
-      super(...)
+      super
     end
 
     def broadcast_to(other_logger)
@@ -37,49 +37,49 @@ module ActiveSupport
       @broadcasts.delete(other_logger)
     end
 
-    def <<(...)
-      dispatch { |logger| logger.<<(...) }
+    def <<(message)
+      dispatch { |logger| logger.<<(message) }
     end
 
-    def add(...)
+    def add(*args, &block)
       dispatch_with_processors do |logger|
-        logger.add(...)
+        logger.add(*args, &block)
       end
     end
 
-    def debug(...)
+    def debug(*args, &block)
       dispatch_with_processors do |logger|
-        logger.debug(...)
+        logger.debug(*args, &block)
       end
     end
 
-    def info(...)
+    def info(*args, &block)
       dispatch_with_processors do |logger|
-        logger.info(...)
+        logger.info(*args, &block)
       end
     end
 
-    def warn(...)
+    def warn(*args, &block)
       dispatch_with_processors do |logger|
-        logger.warn(...)
+        logger.warn(*args, &block)
       end
     end
 
-    def error(...)
+    def error(*args, &block)
       dispatch_with_processors do |logger|
-        logger.error(...)
+        logger.error(*args, &block)
       end
     end
 
-    def fatal(...)
+    def fatal(*args, &block)
       dispatch_with_processors do |logger|
-        logger.fatal(...)
+        logger.fatal(*args, &block)
       end
     end
 
-    def unknown(...)
+    def unknown(*args, &block)
       dispatch_with_processors do |logger|
-        logger.unknown(...)
+        logger.unknown(*args, &block)
       end
     end
 

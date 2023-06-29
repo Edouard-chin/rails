@@ -11,8 +11,8 @@ module ActiveSupport
       base.processors = []
     end
 
-    def initialize(...)
-      super(...)
+    def initialize(*args, **kwargs)
+      super
 
       self.processors = []
     end
@@ -34,12 +34,12 @@ module ActiveSupport
     include LoggerSilence
     include LogProcessor
 
-    def self.logger_outputs_to?(...)
-      OldLogger.logger_outputs_to?(...)
+    def self.logger_outputs_to?(logger, *sources)
+      OldLogger.logger_outputs_to?(logger, *sources)
     end
 
-    def initialize(...)
-      super(...)
+    def initialize(*args, **kwargs)
+      super
 
       @formatter ||= Logger::SimpleFormatter.new
     end

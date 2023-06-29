@@ -155,7 +155,7 @@ module ActiveSupport
       super
     end
 
-    def add(...)
+    def add(*args, &block)
       # if formatter.nil?
       #   ActiveSupport.deprecator.warn(<<~EOM)
       #     ActiveSupport::TaggedLogging will no longer set a default formatter on your logger.
@@ -176,7 +176,7 @@ module ActiveSupport
         self.formatter ||= Logger::SimpleFormatter.new
       # end
 
-      super(...)
+      super(*args, &block)
     end
 
     def tagged(*tags)
