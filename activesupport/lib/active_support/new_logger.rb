@@ -11,8 +11,8 @@ module ActiveSupport
       base.processors = []
     end
 
-    def initialize(*)
-      super
+    def initialize(...)
+      super(...)
 
       self.processors = []
     end
