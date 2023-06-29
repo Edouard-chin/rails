@@ -222,6 +222,35 @@ class TaggedLoggingWithoutBlockTest < ActiveSupport::TestCase
     assert_equal "[BCX] [Jason] Funky time\n[BCX] Junky time!\n", @output.string
   end
 
+  test "broadcasting works no matter the order" do
+    # Test that broadcasting and tagging works no matter how loggers are instantiated.
+
+    # In the previous implementation, this would work:
+    # stdout = Logger.new(STDOUT)
+    # stderr = Logger.new(STDERR)
+    # stdout.extend(ActiveSupport::Loger.broadcast(stderr))
+    # logger = ActiveSupport::TaggedLogging.new(stdout)
+
+    # But this wouldn't:
+    # stdout = Logger.new(STDOUT)
+    # stderr = Logger.new(STDERR)
+    # logger = ActiveSupport::TaggedLogging.new(stdout)
+    # logger.extend(ActiveSupport::Loger.broadcast(stderr))
+  end
+
+  test "broadcasted loggers can modify their tags" do
+    # Check that when modifying the tags on a logger (which clones the logger),
+    # the cloned logger correctly ends up in the broadcast.
+    #
+    # stdout = Logger.new(STDOUT).extend(TaggedLogging)
+    # stderr = Logger.new(STDERR)
+    # broadcast = BroadcastLogger.new.extend(TaggedLogging)
+    # broadcast.broadcast_to(stdout)
+    # broadcast.broadcast_to(stderr)
+    #
+    # stdout.tagged("abc") <== The broadcast should now contain 3 loggers?
+  end
+
   test "keeps broadcasting functionality" do
     broadcast_output = StringIO.new
 
