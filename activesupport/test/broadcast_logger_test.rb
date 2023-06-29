@@ -128,6 +128,15 @@ module ActiveSupport
       assert_equal [[::Logger::FATAL, "seen", nil]], log2.adds
     end
 
+    test "stop broadcasting to a logger" do
+      @logger.stop_broadcasting_to(@log2)
+
+      @logger.info("Hello")
+
+      assert_equal([[1, "Hello", nil]], @log1.adds)
+      assert_empty(@log2.adds)
+    end
+
     class CustomLogger
       attr_reader :adds, :closed, :chevrons
       attr_accessor :level, :progname, :formatter, :local_level
