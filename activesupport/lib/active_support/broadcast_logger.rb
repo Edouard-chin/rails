@@ -9,9 +9,7 @@ module ActiveSupport
     end
 
     def broadcast_to(other_logger)
-      if other_logger.respond_to?(:processors)
-        other_logger.processors << processors
-      end
+      other_logger.extend(TaggedLogging)
 
       @broadcasts << other_logger
     end
@@ -21,31 +19,13 @@ module ActiveSupport
     end
 
     def add(...)
-      dispatch { |logger| logger.add(...) }
-    end
+      dispatch do |logger|
+        logger.processors.unshift(processors)
 
-    def debug(...)
-      dispatch { |logger| logger.debug(...) }
-    end
-
-    def info(...)
-      dispatch { |logger| logger.info(...) }
-    end
-
-    def warn(...)
-      dispatch { |logger| logger.warn(...) }
-    end
-
-    def error(...)
-      dispatch { |logger| logger.error(...) }
-    end
-
-    def fatal(...)
-      dispatch { |logger| logger.fatal(...) }
-    end
-
-    def unknown(...)
-      dispatch { |logger| logger.unknown(...) }
+        logger.add(...)
+      ensure
+        logger.processors.shift(processors.count)
+      end
     end
 
     def progname=(progname)

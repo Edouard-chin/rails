@@ -2,7 +2,7 @@
 
 require_relative "abstract_unit"
 require "active_support/logger"
-require "active_support/new_tagged_logging"
+require "active_support/tagged_logging"
 
 class TaggedLoggingTest < ActiveSupport::TestCase
   class MyLogger < ::ActiveSupport::Logger
@@ -14,7 +14,7 @@ class TaggedLoggingTest < ActiveSupport::TestCase
   setup do
     @output = StringIO.new
     @logger = MyLogger.new(@output)
-    @logger.extend(ActiveSupport::NewTaggedLogging)
+    @logger.extend(ActiveSupport::TaggedLogging)
   end
 
   test "sets logger.formatter if missing and extends it with a tagging API" do
@@ -22,8 +22,9 @@ class TaggedLoggingTest < ActiveSupport::TestCase
     assert_nil logger.formatter
 
     other_logger = ActiveSupport::TaggedLogging.new(logger)
+    other_logger.info("abc")
     assert_not_nil other_logger.formatter
-    assert_respond_to other_logger.formatter, :tagged
+    assert_respond_to other_logger, :tagged
   end
 
   test "tagged once" do
@@ -223,28 +224,16 @@ class TaggedLoggingWithoutBlockTest < ActiveSupport::TestCase
 
   test "keeps broadcasting functionality" do
     broadcast_output = StringIO.new
-    broadcast_logger = ActiveSupport::TaggedLogging.new(Logger.new(broadcast_output))
-    @logger.extend(ActiveSupport::Logger.broadcast(broadcast_logger))
 
-    tagged_logger = @logger.tagged("OMG")
+    broadcast_logger = ActiveSupport::BroadcastLogger.new(File::NULL).extend(ActiveSupport::TaggedLogging)
+    broadcast_logger.broadcast_to(Logger.new(broadcast_output))
+    broadcast_logger.broadcast_to(@logger)
+
+    tagged_logger = broadcast_logger.tagged("OMG")
     tagged_logger.info "Broadcasting..."
 
     assert_equal "[OMG] Broadcasting...\n", @output.string
     assert_equal "[OMG] Broadcasting...\n", broadcast_output.string
-  end
-
-  test "keeps formatter singleton class methods" do
-    plain_output = StringIO.new
-    plain_logger = Logger.new(plain_output)
-    plain_logger.formatter = Logger::Formatter.new
-    plain_logger.formatter.extend(Module.new {
-      def crozz_method
-      end
-    })
-
-    tagged_logger = ActiveSupport::TaggedLogging.new(plain_logger)
-    assert_respond_to tagged_logger.formatter, :tagged
-    assert_respond_to tagged_logger.formatter, :crozz_method
   end
 
   test "accepts non-String objects" do
