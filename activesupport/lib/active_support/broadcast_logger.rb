@@ -1,42 +1,118 @@
 # frozen_string_literal: true
 
 module ActiveSupport
+  # The Broadcast logger is a logger used to write messages to multiple IO. It is commonly used
+  # in development to display messages on STDOUT and also write them to a file (development.log).
+  # With the Broadcast logger, you can broadcast your logs to a unlimited number of sinks.
+  #
+  # The BroadcastLogger acts as a standard logger and all methods you are used to are available.
+  # However, all the methods on this logger will propagate and be delegated to the other loggers
+  # that are part of the broadcast.
+  #
+  # Broadcasting your logs.
+  #
+  #   stdout_logger = Logger.new(STDOUT)
+  #   file_logger   = Logger.new("development.log")
+  #   broadcast = BroadcastLogger.new
+  #   broadcast.broadcast_to(stdout_logger, file_logger)
+  #
+  #   broadcast.info("Hello world!") # Writes the log to STDOUT and the development.log file.
+  #
+  # Modifying the log level to all broadcasted loggers.
+  #
+  #   stdout_logger = Logger.new(STDOUT)
+  #   file_logger   = Logger.new("development.log")
+  #   broadcast = BroadcastLogger.new
+  #   broadcast.broadcast_to(stdout_logger, file_logger)
+  #
+  #   broadcast.level = Logger::FATAL # Modify the log level for the whole broadcast.
+  #
+  # Stop broadcasting log to a sink.
+  #
+  #   stdout_logger = Logger.new(STDOUT)
+  #   file_logger   = Logger.new("development.log")
+  #   broadcast = BroadcastLogger.new
+  #   broadcast.broadcast_to(stdout_logger, file_logger)
+  #   broadcast.info("Hello world!") # Writes the log to STDOUT and the development.log file.
+  #
+  #   broadcast.stop_broadcasting_to(file_logger)
+  #   broadcast.info("Hello world!") # Writes the log *only* to STDOUT.
+  #
+  # At least one sink has to be part of the broadcast. Otherwise, your logs will not
+  # be written anywhere. For instance:
+  #
+  #   broadcast = BroadcastLogger.new
+  #   broadcast.info("Hello world") # The log message will appear nowhere.
+  #
+  # ====== A note on tagging logs while using the Broadcast logger
+  #
+  # It is quite frequent to tag logs using the `ActiveSupport::TaggedLogging` module
+  # while also broadcasting them (the default Rails.logger in development is
+  # configured in such a way).
+  # Tagging your logs can be done for the whole broadcast or for each sink independently.
+  #
+  # Tagging logs for the whole broadcast
+  #
+  #   broadcast = BroadcastLogger.new.extend(ActiveSupport::TaggedLogging)
+  #   broadcast.broadcast_to(stdout_logger, file_logger)
+  #   broadcast.tagged("BMX") { broadcast.info("Hello world!") }
+  #
+  #   Outputs: "[BMX] Hello world!" is written on both STDOUT and in the file.
+  #
+  # Tagging logs for a single logger
+  #
+  #   stdout_logger.extend(ActiveSupport::TaggedLogging)
+  #   stdout_logger.push_tags("BMX")
+  #   broadcast = BroadcastLogger.new
+  #   broadcast.broadcast_to(stdout_logger, file_logger)
+  #   broadcast.info("Hello world!")
+  #
+  #   Outputs: "[BMX] Hello world!" is written on STDOUT
+  #   Outputs: "Hello world!"       is written in the file
+  #
+  # Adding tags for the whole broadcast and adding extra tags on a specific logger
+  #
+  #   stdout_logger.extend(ActiveSupport::TaggedLogging)
+  #   stdout_logger.push_tags("BMX")
+  #   broadcast = BroadcastLogger.new.extend(ActiveSupport::TaggedLogging)
+  #   broadcast.broadcast_to(stdout_logger, file_logger)
+  #   broadcast.tagged("APP") { broadcast.info("Hello world!") }
+  #
+  #   Outputs: "[APP][BMX] Hello world!" is written on STDOUT
+  #   Outputs: "[APP] Hello world!"      is written in the file
   class BroadcastLogger < Logger
-    # BroadcastLogger is a regular logger. Main reason is to keep the contract untouched and
-    # let users call any methods that they are used to.
-    #
-    # But the BroadcastLogger by itself doesn't log anything. It delegates everything
-    # to the logger its broadcasting to.
-    #
-    # The previous implementation was different and a Logger could "transform" into
-    # a broadcast, responsible for both logging/formatting its own messages as well
-    # as passing the message along logger it broadcasts to.
-    #
-    # Main disadventage:
-    # - If a user wants to remove the logger from the broadcast it's not possible.
-    # - Changes made to the logger changes all logger. No way to modify only the logger.
-    #   I.e. calling `level=` where I want only the main logger to be changed. Fixable with
-    #   creating `broadcast_*=` methods but it doesn't feel great.
+    # @return [Array<Logger>] All the logger that are part of this broadcast.
+    attr_reader :broadcasts
+
     def initialize(logdev = File::NULL, *args, **kwargs)
       @broadcasts = []
 
       super(logdev, *args, **kwargs)
     end
 
-    def broadcast_to(*other_loggers)
+    # Add logger(s) to the broadcast.
+    #
+    # @param loggers [Logger] Loggers that will be part of this broadcast.
+    #
+    # @example Broadcast yours logs to STDOUT and STDERR
+    #   broadcast.broadcast_to(Logger.new(STDOUT), Logger.new(STDERR))
+    def broadcast_to(*loggers)
       # Should extend from LogProcessor instead. Though the best would be to not extend
       # from anything. But if a vanilla logger gets added to the broadcast, processors
       # added to the broadcast wouldn't apply.
-      other_loggers.each do |logger|
+      loggers.each do |logger|
         logger.extend(TaggedLogging)
       end
 
-      @broadcasts.concat(other_loggers)
+      @broadcasts.concat(loggers)
     end
 
-    # Add a test for this
-    def stop_broadcasting_to(other_logger)
-      @broadcasts.delete(other_logger)
+    # Remove a logger from the broadcast. When a logger is removed, messages sent to
+    # the broadcast will no longer be written to the sink.
+    #
+    # @param logger [Logger]
+    def stop_broadcasting_to(logger)
+      @broadcasts.delete(logger)
     end
 
     def <<(message)

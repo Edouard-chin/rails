@@ -7,6 +7,27 @@ require "logger"
 require "active_support/logger"
 
 module ActiveSupport
+  # = Active Support Tagged Logging
+  #
+  # Wraps any standard Logger object to provide tagging capabilities.
+  #
+  # May be called with a block:
+  #
+  #   logger = ActiveSupport::TaggedLogging.new(Logger.new(STDOUT))
+  #   logger.tagged('BCX') { logger.info 'Stuff' }                                  # Logs "[BCX] Stuff"
+  #   logger.tagged('BCX', "Jason") { |tagged_logger| tagged_logger.info 'Stuff' }  # Logs "[BCX] [Jason] Stuff"
+  #   logger.tagged('BCX') { logger.tagged('Jason') { logger.info 'Stuff' } }       # Logs "[BCX] [Jason] Stuff"
+  #
+  # If called without a block, a new logger will be returned with applied tags:
+  #
+  #   logger = ActiveSupport::TaggedLogging.new(Logger.new(STDOUT))
+  #   logger.tagged("BCX").info "Stuff"                 # Logs "[BCX] Stuff"
+  #   logger.tagged("BCX", "Jason").info "Stuff"        # Logs "[BCX] [Jason] Stuff"
+  #   logger.tagged("BCX").tagged("Jason").info "Stuff" # Logs "[BCX] [Jason] Stuff"
+  #
+  # This is used by the default Rails.logger as configured by Railties to make
+  # it easy to stamp log lines with subdomains, request ids, and anything else
+  # to aid debugging of multi-user production applications.
   module TaggedLogging
     class TagProcessor
       include OldTaggedLogging::Formatter
@@ -26,7 +47,7 @@ module ActiveSupport
       base.processors << base.tag_processor
     end
 
-    def self.new(logger)
+    def self.new(logger) # :nodoc:
       if logger.is_a?(TaggedLogging)
         ActiveSupport.deprecator.warn(<<~EOM)
           `ActiveSupport::TaggedLogging.new` is deprecated.
@@ -58,7 +79,7 @@ module ActiveSupport
       super
     end
 
-    def add(*args, &block)
+    def add(*args, &block) # :nodoc:
       if formatter.nil?
         ActiveSupport.deprecator.warn(<<~EOM)
           ActiveSupport::TaggedLogging will no longer set a default formatter on your logger.
@@ -82,11 +103,32 @@ module ActiveSupport
       super(*args, &block)
     end
 
+    # Add +tags+ to your logs. This method can be used with or a without a block.
+    #
+    # With a block:
+    #   All logs will be tagged with +tags+ for the duration of the block.
+    #
+    # Without a block:
+    #  A *new* logger instance will be returned. Logs written with this new logger will be tagged
+    #  using the +tags+ and any other tags from the previous logger. For example:
+    #
+    #  logger1 = Logger.new(STDOUT).extend(ActiveSupport::TaggedLogging)
+    #  logger2 = logger1.tagged("BMX")
+    #
+    #  logger1.info("Hello world!") # Outputs: Hello world!
+    #  logger2.info("Hello world!") # Outputs: [BMX] Hello world!
+    #
+    #  logger3 = logger2.tagged("APP")
+    #  logger3.info("Hello world!") # Output: [BMX][APP] Hello world!
+    #
+    # If you want to permanently add tags to a logger, without creating a new logger instance,
+    # use `logger#push_tags` instead.
+    #
+    # @param tags [Array<String>] Tags to be added to the log messages.
     def tagged(*tags)
       if block_given?
         tag_processor.tagged(*tags) { yield(self) }
       else
-        # Problem if the previous logger was part of a broadcast. See comment on #initialize_clone.
         logger = clone
         logger.tag_processor.extend(OldTaggedLogging::LocalTagStorage)
         logger.tag_processor.push_tags(*tag_processor.current_tags, *tags)
