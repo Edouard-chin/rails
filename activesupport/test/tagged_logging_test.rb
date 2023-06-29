@@ -216,8 +216,7 @@ class TaggedLoggingWithoutBlockTest < ActiveSupport::TestCase
     broadcast_output = StringIO.new
 
     broadcast_logger = ActiveSupport::BroadcastLogger.new(File::NULL).extend(ActiveSupport::TaggedLogging)
-    broadcast_logger.broadcast_to(Logger.new(broadcast_output))
-    broadcast_logger.broadcast_to(@logger)
+    broadcast_logger.broadcast_to(Logger.new(broadcast_output), @logger)
 
     tagged_logger = broadcast_logger.tagged("OMG")
     tagged_logger.info "Broadcasting..."

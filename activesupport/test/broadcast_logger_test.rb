@@ -9,9 +9,8 @@ module ActiveSupport
     setup do
       @log1 = FakeLogger.new
       @log2 = FakeLogger.new
-      @logger = BroadcastLogger.new(File::NULL)
-      @logger.broadcast_to(@log1)
-      @logger.broadcast_to(@log2)
+      @logger = BroadcastLogger.new
+      @logger.broadcast_to(@log1, @log2)
     end
 
     Logger::Severity.constants.each do |level_name|
@@ -83,9 +82,8 @@ module ActiveSupport
       assert_respond_to new_logger, :silence
       assert_not_respond_to custom_logger, :silence
 
-      logger = BroadcastLogger.new(File::NULL)
-      logger.broadcast_to(custom_logger)
-      logger.broadcast_to(new_logger)
+      logger = BroadcastLogger.new
+      logger.broadcast_to(custom_logger, new_logger)
 
       logger.silence do
         logger.error "from error"

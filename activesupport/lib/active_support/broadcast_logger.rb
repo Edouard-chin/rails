@@ -17,19 +17,21 @@ module ActiveSupport
     # - Changes made to the logger changes all logger. No way to modify only the logger.
     #   I.e. calling `level=` where I want only the main logger to be changed. Fixable with
     #   creating `broadcast_*=` methods but it doesn't feel great.
-    def initialize(*args, **kwargs)
+    def initialize(logdev = File::NULL, *args, **kwargs)
       @broadcasts = []
 
-      super
+      super(logdev, *args, **kwargs)
     end
 
-    def broadcast_to(other_logger)
+    def broadcast_to(*other_loggers)
       # Should extend from LogProcessor instead. Though the best would be to not extend
       # from anything. But if a vanilla logger gets added to the broadcast, processors
       # added to the broadcast wouldn't apply.
-      other_logger.extend(TaggedLogging)
+      other_loggers.each do |logger|
+        logger.extend(TaggedLogging)
+      end
 
-      @broadcasts << other_logger
+      @broadcasts.concat(other_loggers)
     end
 
     # Add a test for this
