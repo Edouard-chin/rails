@@ -64,8 +64,21 @@ module ActiveSupport
     end
 
     test "severity methods get called on all loggers" do
-      # Check that creating logger with overriden severity methods get called.
-      # AFAICT the previous implementation wouldn't call those methods, but only `add`.
+      my_logger = Class.new(::Logger) do
+        attr_reader :info_called
+
+        def info(msg, &block)
+          @info_called = true
+        end
+      end.new(StringIO.new)
+
+      @logger.broadcast_to(my_logger)
+
+      assert_changes(-> { my_logger.info_called }, from: nil, to: true) do
+        @logger.info("message")
+      end
+    ensure
+      @logger.stop_broadcasting_to(my_logger)
     end
 
     test "#silence does not break custom loggers" do
