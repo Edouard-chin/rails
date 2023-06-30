@@ -71,6 +71,24 @@ module ActiveSupport
       assert_equal ::Logger::FATAL, log2.local_level
     end
 
+    test "severity methods get called on all loggers" do
+      my_logger = Class.new(::Logger) do
+        attr_reader :info_called
+
+        def info(msg, &block)
+          @info_called = true
+        end
+      end.new(StringIO.new)
+
+      @logger.broadcast_to(my_logger)
+
+      assert_changes(-> { my_logger.info_called }, from: nil, to: true) do
+        @logger.info("message")
+      end
+    ensure
+      @logger.stop_broadcasting_to(my_logger)
+    end
+
     test "#silence does not break custom loggers" do
       new_logger = FakeLogger.new
       custom_logger = CustomLogger.new
@@ -115,6 +133,30 @@ module ActiveSupport
 
       assert_equal [[::Logger::FATAL, "seen", nil]], log1.adds
       assert_equal [[::Logger::FATAL, "seen", nil]], log2.adds
+    end
+
+    test "stop broadcasting to a logger" do
+      @logger.stop_broadcasting_to(@log2)
+
+      @logger.info("Hello")
+
+      assert_equal([[1, "Hello", nil]], @log1.adds)
+      assert_empty(@log2.adds)
+    end
+
+    test "can broadcast to another broadcast" do
+      @log3 = FakeLogger.new
+      @log4 = FakeLogger.new
+      @broadcast2 = ActiveSupport::BroadcastLogger.new
+      @broadcast2.broadcast_to(@log3, @log4)
+
+      @logger.broadcast_to(@broadcast2)
+      @logger.info("Hello")
+
+      assert_equal([[1, "Hello", nil]], @log1.adds)
+      assert_equal([[1, "Hello", nil]], @log2.adds)
+      assert_equal([[1, "Hello", nil]], @log3.adds)
+      assert_equal([[1, "Hello", nil]], @log4.adds)
     end
 
     class CustomLogger

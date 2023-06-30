@@ -232,6 +232,33 @@ class TaggedLoggingWithoutBlockTest < ActiveSupport::TestCase
     assert_equal "[OMG] Broadcasting...\n", broadcast_output.string
   end
 
+  test "#tagged without a block doesn't leak to other loggers" do
+    sink1 = StringIO.new
+    logger1 = ActiveSupport::Logger.new(sink1).extend(ActiveSupport::TaggedLogging)
+    sink2 = StringIO.new
+    logger2 = ActiveSupport::Logger.new(sink2).extend(ActiveSupport::TaggedLogging)
+    broadcast_logger = ActiveSupport::BroadcastLogger.new.extend(ActiveSupport::TaggedLogging)
+    broadcast_logger.broadcast_to(logger1, logger2)
+
+    broadcast_logger.tagged("tag")
+    broadcast_logger.info("text")
+
+    assert_equal("text\n", sink1.string)
+    assert_equal("text\n", sink2.string)
+  end
+
+  test "keeps broadcasting functionality when passed a block" do
+    output = StringIO.new
+    logger = Logger.new(output)
+    broadcast_logger = ActiveSupport::BroadcastLogger.new.extend(ActiveSupport::TaggedLogging)
+    broadcast_logger.broadcast_to(@logger, logger)
+
+    broadcast_logger.tagged("OMG") { |logger| logger.info "Broadcasting..." }
+
+    assert_equal "[OMG] Broadcasting...\n", @output.string
+    assert_equal "[OMG] Broadcasting...\n", output.string
+  end
+
   test "keeps formatter singleton class methods" do
     plain_output = StringIO.new
     plain_logger = Logger.new(plain_output)
@@ -249,5 +276,30 @@ class TaggedLoggingWithoutBlockTest < ActiveSupport::TestCase
   test "accepts non-String objects" do
     @logger.tagged("tag") { @logger.info [1, 2, 3] }
     assert_equal "[tag] [1, 2, 3]\n", @output.string
+  end
+
+  test "setting a default formatter is deprecated" do
+    output = StringIO.new
+    logger = Logger.new(output).extend(ActiveSupport::TaggedLogging)
+
+    assert_deprecated(/will no longer set a default formatter on your logger/) do
+      logger.info("hello")
+    end
+  end
+
+  test "#new is deprecated to create a new logger" do
+    logger = Logger.new(STDOUT)
+
+    assert_deprecated(/To create a new Logger instance with tagging functionalities, extend/) do
+      ActiveSupport::TaggedLogging.new(logger)
+    end
+  end
+
+  test "#new is deprecated when cloning a logger" do
+    tagged_logger = Logger.new(STDOUT).extend(ActiveSupport::TaggedLogging)
+
+    assert_deprecated(/To create a new logger from an existing logger, use/) do
+      ActiveSupport::TaggedLogging.new(tagged_logger)
+    end
   end
 end

@@ -28,6 +28,8 @@ require "active_support/dependencies/autoload"
 require "active_support/version"
 require "active_support/deprecator"
 require "active_support/logger"
+require "active_support/new_logger"
+require "active_support/broadcast_logger"
 require "active_support/lazy_load_hooks"
 require "active_support/core_ext/date_and_time/compatibility"
 
@@ -79,7 +81,7 @@ module ActiveSupport
     autoload :OrderedOptions
     autoload :StringInquirer
     autoload :EnvironmentInquirer
-    autoload :TaggedLogging
+    autoload :TaggedLogging, "active_support/new_tagged_logging"
     autoload :XmlMini
     autoload :ArrayInquirer
   end
