@@ -9,8 +9,8 @@ module ActiveSupport
     setup do
       @log1 = FakeLogger.new
       @log2 = FakeLogger.new
-      @log1.extend Logger.broadcast @log2
-      @logger = @log1
+      @logger = BroadcastLogger.new
+      @logger.broadcast_to(@log1, @log2)
     end
 
     Logger::Severity.constants.each do |level_name|
@@ -40,7 +40,7 @@ module ActiveSupport
     end
 
     test "#level= assigns the level to all loggers" do
-      assert_equal ::Logger::DEBUG, logger.level
+      assert_equal ::Logger::DEBUG, log1.level
       logger.level = ::Logger::FATAL
 
       assert_equal ::Logger::FATAL, log1.level
@@ -56,7 +56,6 @@ module ActiveSupport
     end
 
     test "#formatter= assigns to all the loggers" do
-      assert_nil logger.formatter
       logger.formatter = ::Logger::FATAL
 
       assert_equal ::Logger::FATAL, log1.formatter
@@ -64,7 +63,7 @@ module ActiveSupport
     end
 
     test "#local_level= assigns the local_level to all loggers" do
-      assert_equal ::Logger::DEBUG, logger.local_level
+      assert_equal ::Logger::DEBUG, log1.local_level
       logger.local_level = ::Logger::FATAL
 
       assert_equal ::Logger::FATAL, log1.local_level
@@ -95,11 +94,12 @@ module ActiveSupport
       assert_respond_to new_logger, :silence
       assert_not_respond_to custom_logger, :silence
 
-      custom_logger.extend(Logger.broadcast(new_logger))
+      logger = BroadcastLogger.new
+      logger.broadcast_to(custom_logger, new_logger)
 
-      custom_logger.silence do
-        custom_logger.error "from error"
-        custom_logger.unknown "from unknown"
+      logger.silence do
+        logger.error "from error"
+        logger.unknown "from unknown"
       end
 
       assert_equal [[::Logger::ERROR, "from error", nil], [::Logger::UNKNOWN, "from unknown", nil]], custom_logger.adds

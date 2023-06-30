@@ -176,13 +176,14 @@ class LoggerTest < ActiveSupport::TestCase
     another_output  = StringIO.new
     another_logger  = ActiveSupport::Logger.new(another_output)
 
-    @logger.extend ActiveSupport::Logger.broadcast(another_logger)
+    logger = ActiveSupport::BroadcastLogger.new
+    logger.broadcast_to(@logger, another_logger)
 
-    @logger.debug "CORRECT DEBUG"
-    @logger.silence do |logger|
+    logger.debug "CORRECT DEBUG"
+    logger.silence do |logger|
       assert_kind_of ActiveSupport::Logger, logger
-      @logger.debug "FAILURE"
-      @logger.error "CORRECT ERROR"
+      logger.debug "FAILURE"
+      logger.error "CORRECT ERROR"
     end
 
     assert_includes @output.string, "CORRECT DEBUG"
@@ -198,13 +199,14 @@ class LoggerTest < ActiveSupport::TestCase
     another_output  = StringIO.new
     another_logger  = ::Logger.new(another_output)
 
-    @logger.extend ActiveSupport::Logger.broadcast(another_logger)
+    logger = ActiveSupport::BroadcastLogger.new
+    logger.broadcast_to(@logger, another_logger)
 
-    @logger.debug "CORRECT DEBUG"
-    @logger.silence do |logger|
+    logger.debug "CORRECT DEBUG"
+    logger.silence do |logger|
       assert_kind_of ActiveSupport::Logger, logger
-      @logger.debug "FAILURE"
-      @logger.error "CORRECT ERROR"
+      logger.debug "FAILURE"
+      logger.error "CORRECT ERROR"
     end
 
     assert_includes @output.string, "CORRECT DEBUG"
