@@ -154,6 +154,10 @@ module ActiveSupport
       end
     end
 
+    def formatter=(formatter)
+      dispatch { |logger| logger.formatter = formatter }
+    end
+
     def progname=(progname)
       dispatch { |logger| logger.progname = progname }
     end
