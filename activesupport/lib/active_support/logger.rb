@@ -5,7 +5,7 @@ require "active_support/logger_thread_safe_level"
 require "logger"
 
 module ActiveSupport
-  class Logger < ::Logger
+  class OldLogger < ::Logger
     include LoggerSilence
 
     # Returns true if the logger destination matches one of the sources
