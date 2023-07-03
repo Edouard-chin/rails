@@ -255,28 +255,28 @@ class TaggedLoggingWithoutBlockTest < ActiveSupport::TestCase
     assert_equal "[tag] [1, 2, 3]\n", @output.string
   end
 
-  test "setting a default formatter is deprecated" do
-    output = StringIO.new
-    logger = Logger.new(output).extend(ActiveSupport::TaggedLogging)
+  # test "setting a default formatter is deprecated" do
+  #   output = StringIO.new
+  #   logger = Logger.new(output).extend(ActiveSupport::TaggedLogging)
 
-    assert_deprecated(/will no longer set a default formatter on your logger/) do
-      logger.info("hello")
-    end
-  end
+  #   assert_deprecated(/will no longer set a default formatter on your logger/) do
+  #     logger.info("hello")
+  #   end
+  # end
 
-  test "#new is deprecated to create a new logger" do
-    logger = Logger.new(STDOUT)
+  # test "#new is deprecated to create a new logger" do
+  #   logger = Logger.new(STDOUT)
 
-    assert_deprecated(/To create a new Logger instance with tagging functionalities, extend/) do
-      ActiveSupport::TaggedLogging.new(logger)
-    end
-  end
+  #   assert_deprecated(/To create a new Logger instance with tagging functionalities, extend/) do
+  #     ActiveSupport::TaggedLogging.new(logger)
+  #   end
+  # end
 
-  test "#new is deprecated when cloning a logger" do
-    tagged_logger = Logger.new(STDOUT).extend(ActiveSupport::TaggedLogging)
+  # test "#new is deprecated when cloning a logger" do
+  #   tagged_logger = Logger.new(STDOUT).extend(ActiveSupport::TaggedLogging)
 
-    assert_deprecated(/To create a new logger from an existing logger, use/) do
-      ActiveSupport::TaggedLogging.new(tagged_logger)
-    end
-  end
+  #   assert_deprecated(/To create a new logger from an existing logger, use/) do
+  #     ActiveSupport::TaggedLogging.new(tagged_logger)
+  #   end
+  # end
 end

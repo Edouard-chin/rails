@@ -49,43 +49,6 @@ module ActiveSupport
   #
   #   broadcast = BroadcastLogger.new
   #   broadcast.info("Hello world") # The log message will appear nowhere.
-  #
-  # ====== A note on tagging logs while using the Broadcast logger
-  #
-  # It is quite frequent to tag logs using the `ActiveSupport::TaggedLogging` module
-  # while also broadcasting them (the default Rails.logger in development is
-  # configured in such a way).
-  # Tagging your logs can be done for the whole broadcast or for each sink independently.
-  #
-  # Tagging logs for the whole broadcast
-  #
-  #   broadcast = BroadcastLogger.new.extend(ActiveSupport::TaggedLogging)
-  #   broadcast.broadcast_to(stdout_logger, file_logger)
-  #   broadcast.tagged("BMX") { broadcast.info("Hello world!") }
-  #
-  #   Outputs: "[BMX] Hello world!" is written on both STDOUT and in the file.
-  #
-  # Tagging logs for a single logger
-  #
-  #   stdout_logger.extend(ActiveSupport::TaggedLogging)
-  #   stdout_logger.push_tags("BMX")
-  #   broadcast = BroadcastLogger.new
-  #   broadcast.broadcast_to(stdout_logger, file_logger)
-  #   broadcast.info("Hello world!")
-  #
-  #   Outputs: "[BMX] Hello world!" is written on STDOUT
-  #   Outputs: "Hello world!"       is written in the file
-  #
-  # Adding tags for the whole broadcast and adding extra tags on a specific logger
-  #
-  #   stdout_logger.extend(ActiveSupport::TaggedLogging)
-  #   stdout_logger.push_tags("BMX")
-  #   broadcast = BroadcastLogger.new.extend(ActiveSupport::TaggedLogging)
-  #   broadcast.broadcast_to(stdout_logger, file_logger)
-  #   broadcast.tagged("APP") { broadcast.info("Hello world!") }
-  #
-  #   Outputs: "[APP][BMX] Hello world!" is written on STDOUT
-  #   Outputs: "[APP] Hello world!"      is written in the file
   class BroadcastLogger
     include ActiveSupport::LoggerSilence
 
@@ -127,46 +90,32 @@ module ActiveSupport
     end
 
     def add(*args, &block)
-      dispatch_with_processors do |logger|
-        logger.add(*args, &block)
-      end
+      dispatch { |logger| logger.add(*args, &block) }
     end
     alias_method :log, :add
 
     def debug(*args, &block)
-      dispatch_with_processors do |logger|
-        logger.debug(*args, &block)
-      end
+      dispatch { |logger| logger.debug(*args, &block) }
     end
 
     def info(*args, &block)
-      dispatch_with_processors do |logger|
-        logger.info(*args, &block)
-      end
+      dispatch { |logger| logger.info(*args, &block) }
     end
 
     def warn(*args, &block)
-      dispatch_with_processors do |logger|
-        logger.warn(*args, &block)
-      end
+      dispatch { |logger| logger.warn(*args, &block) }
     end
 
     def error(*args, &block)
-      dispatch_with_processors do |logger|
-        logger.error(*args, &block)
-      end
+      dispatch { |logger| logger.error(*args, &block) }
     end
 
     def fatal(*args, &block)
-      dispatch_with_processors do |logger|
-        logger.fatal(*args, &block)
-      end
+      dispatch { |logger| logger.fatal(*args, &block) }
     end
 
     def unknown(*args, &block)
-      dispatch_with_processors do |logger|
-        logger.unknown(*args, &block)
-      end
+      dispatch { |logger| logger.unknown(*args, &block) }
     end
 
     def formatter=(formatter)
@@ -250,17 +199,6 @@ module ActiveSupport
     private
       def dispatch(&block)
         @broadcasts.each { |logger| block.call(logger) }
-      end
-
-      def dispatch_with_processors(&block)
-        @broadcasts.each do |logger|
-          logger.extend(LogProcessor) unless logger.is_a?(LogProcessor)
-          logger.processors.unshift(processors)
-
-          block.call(logger)
-        ensure
-          logger.processors.shift(processors.count)
-        end
       end
   end
 end
