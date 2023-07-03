@@ -9,8 +9,7 @@ class LogBroadcastAndTaggingTest < ActiveSupport::TestCase
     @logger1 = Logger.new(@sink1, formatter: ActiveSupport::Logger::SimpleFormatter.new)
     @logger2 = Logger.new(@sink2, formatter: ActiveSupport::Logger::SimpleFormatter.new)
 
-    @broadcast = ActiveSupport::BroadcastLogger.new
-    @broadcast.broadcast_to(@logger1, @logger2)
+    @broadcast = ActiveSupport::BroadcastLogger.new(@logger1, @logger2)
   end
 
   test "tag logs for the whole broadcast with a block" do
@@ -57,9 +56,8 @@ class LogBroadcastAndTaggingTest < ActiveSupport::TestCase
     @sink4 = StringIO.new
     @logger3 = Logger.new(@sink3, formatter: ActiveSupport::Logger::SimpleFormatter.new)
     @logger4 = Logger.new(@sink4, formatter: ActiveSupport::Logger::SimpleFormatter.new)
-    @broadcast2 = ActiveSupport::BroadcastLogger.new
+    @broadcast2 = ActiveSupport::BroadcastLogger.new(@logger3, @logger4)
 
-    @broadcast2.broadcast_to(@logger3, @logger4)
     @broadcast.broadcast_to(@broadcast2)
 
     @broadcast.extend(ActiveSupport::TaggedLogging)

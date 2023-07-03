@@ -9,8 +9,7 @@ module ActiveSupport
     setup do
       @log1 = FakeLogger.new
       @log2 = FakeLogger.new
-      @logger = BroadcastLogger.new
-      @logger.broadcast_to(@log1, @log2)
+      @logger = BroadcastLogger.new(@log1, @log2)
     end
 
     Logger::Severity.constants.each do |level_name|
@@ -94,8 +93,7 @@ module ActiveSupport
       assert_respond_to new_logger, :silence
       assert_not_respond_to custom_logger, :silence
 
-      logger = BroadcastLogger.new
-      logger.broadcast_to(custom_logger, new_logger)
+      logger = BroadcastLogger.new(custom_logger, new_logger)
 
       logger.silence do
         logger.error "from error"
@@ -144,11 +142,10 @@ module ActiveSupport
       assert_empty(@log2.adds)
     end
 
-    test "can broadcast to another broadcast" do
+    test "#broadcast on another broadcasted logger" do
       @log3 = FakeLogger.new
       @log4 = FakeLogger.new
-      @broadcast2 = ActiveSupport::BroadcastLogger.new
-      @broadcast2.broadcast_to(@log3, @log4)
+      @broadcast2 = ActiveSupport::BroadcastLogger.new(@log3, @log4)
 
       @logger.broadcast_to(@broadcast2)
       @logger.info("Hello")
@@ -157,6 +154,76 @@ module ActiveSupport
       assert_equal([[1, "Hello", nil]], @log2.adds)
       assert_equal([[1, "Hello", nil]], @log3.adds)
       assert_equal([[1, "Hello", nil]], @log4.adds)
+    end
+
+    test "#debug? is true when at least one logger's level is at or above DEBUG level" do
+      @log1.level = Logger::DEBUG
+      @log2.level = Logger::FATAL
+
+      assert_predicate(@logger, :debug?)
+    end
+
+    test "#debug? is false when all loggers are below DEBUG level" do
+      @log1.level = Logger::ERROR
+      @log2.level = Logger::FATAL
+
+      assert_not_predicate(@logger, :debug?)
+    end
+
+    test "#info? is true when at least one logger's level is at or above INFO level" do
+      @log1.level = Logger::DEBUG
+      @log2.level = Logger::FATAL
+
+      assert_predicate(@logger, :info?)
+    end
+
+    test "#info? is false when all loggers are below INFO" do
+      @log1.level = Logger::ERROR
+      @log2.level = Logger::FATAL
+
+      assert_not_predicate(@logger, :info?)
+    end
+
+    test "#warn? is true when at least one logger's level is at or above WARN level" do
+      @log1.level = Logger::DEBUG
+      @log2.level = Logger::FATAL
+
+      assert_predicate(@logger, :warn?)
+    end
+
+    test "#warn? is false when all loggers are below WARN" do
+      @log1.level = Logger::ERROR
+      @log2.level = Logger::FATAL
+
+      assert_not_predicate(@logger, :warn?)
+    end
+
+    test "#error? is true when at least one logger's level is at or above ERROR level" do
+      @log1.level = Logger::DEBUG
+      @log2.level = Logger::FATAL
+
+      assert_predicate(@logger, :error?)
+    end
+
+    test "#error? is false when all loggers are below ERROR" do
+      @log1.level = Logger::FATAL
+      @log2.level = Logger::FATAL
+
+      assert_not_predicate(@logger, :error?)
+    end
+
+    test "#fatal? is true when at least one logger's level is at or above FATAL level" do
+      @log1.level = Logger::DEBUG
+      @log2.level = Logger::FATAL
+
+      assert_predicate(@logger, :fatal?)
+    end
+
+    test "#fatal? is false when all loggers are below FATAL" do
+      @log1.level = Logger::UNKNOWN
+      @log2.level = Logger::UNKNOWN
+
+      assert_not_predicate(@logger, :fatal?)
     end
 
     class CustomLogger

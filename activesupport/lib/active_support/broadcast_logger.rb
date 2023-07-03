@@ -13,17 +13,24 @@ module ActiveSupport
   #
   #   stdout_logger = Logger.new(STDOUT)
   #   file_logger   = Logger.new("development.log")
-  #   broadcast = BroadcastLogger.new
-  #   broadcast.broadcast_to(stdout_logger, file_logger)
+  #   broadcast = BroadcastLogger.new(stdout_logger, file_logger)
   #
   #   broadcast.info("Hello world!") # Writes the log to STDOUT and the development.log file.
   #
-  # Modifying the log level to all broadcasted loggers.
+  # Add a logger to the broadcast.
+  #
+  #   stdout_logger = Logger.new(STDOUT)
+  #   broadcast = BroadcastLogger.new(stdout_logger)
+  #   file_logger   = Logger.new("development.log")
+  #   broadcast.broadcast_to(file_logger)
+  #
+  #   broadcast.info("Hello world!") # Writes the log to STDOUT and the development.log file.
+  #
+  # Modifying the log level for all broadcasted loggers.
   #
   #   stdout_logger = Logger.new(STDOUT)
   #   file_logger   = Logger.new("development.log")
-  #   broadcast = BroadcastLogger.new
-  #   broadcast.broadcast_to(stdout_logger, file_logger)
+  #   broadcast = BroadcastLogger.new(stdout_logger, file_logger)
   #
   #   broadcast.level = Logger::FATAL # Modify the log level for the whole broadcast.
   #
@@ -31,8 +38,7 @@ module ActiveSupport
   #
   #   stdout_logger = Logger.new(STDOUT)
   #   file_logger   = Logger.new("development.log")
-  #   broadcast = BroadcastLogger.new
-  #   broadcast.broadcast_to(stdout_logger, file_logger)
+  #   broadcast = BroadcastLogger.new(stdout_logger, file_logger)
   #   broadcast.info("Hello world!") # Writes the log to STDOUT and the development.log file.
   #
   #   broadcast.stop_broadcasting_to(file_logger)
@@ -80,14 +86,16 @@ module ActiveSupport
   #
   #   Outputs: "[APP][BMX] Hello world!" is written on STDOUT
   #   Outputs: "[APP] Hello world!"      is written in the file
-  class BroadcastLogger < Logger
+  class BroadcastLogger
+    include ActiveSupport::LoggerSilence
+
     # @return [Array<Logger>] All the logger that are part of this broadcast.
     attr_reader :broadcasts
 
-    def initialize(logdev = File::NULL, *args, **kwargs)
+    def initialize(*loggers)
       @broadcasts = []
 
-      super(logdev, *args, **kwargs)
+      broadcast_to(*loggers)
     end
 
     # Add logger(s) to the broadcast.
@@ -108,6 +116,12 @@ module ActiveSupport
       @broadcasts.delete(logger)
     end
 
+    # Implemented for duck typing.
+    def progname; end
+
+    # Implemented for duck typing.
+    def level; end
+
     def <<(message)
       dispatch { |logger| logger.<<(message) }
     end
@@ -117,6 +131,7 @@ module ActiveSupport
         logger.add(*args, &block)
       end
     end
+    alias_method :log, :add
 
     def debug(*args, &block)
       dispatch_with_processors do |logger|
@@ -165,6 +180,7 @@ module ActiveSupport
     def level=(level)
       dispatch { |logger| logger.level = level }
     end
+    alias_method :sev_threshold=, :level=
 
     def local_level=(level)
       dispatch do |logger|
@@ -174,6 +190,61 @@ module ActiveSupport
 
     def close
       dispatch { |logger| logger.close }
+    end
+
+    # @return [Boolean] +True+ if the log level allows entries with severity Logger::DEBUG to be written
+    #    to at least one broadcast. +False+ otherwise.
+    def debug?
+      @broadcasts.any? { |logger| logger.debug? }
+    end
+
+    # Sets the log level to Logger::DEBUG for the whole brodcast.
+    def debug!
+      dispatch { |logger| logger.debug! }
+    end
+
+    # @return [Boolean] +True+ if the log level allows entries with severity Logger::INFO to be written
+    #    to at least one broadcast. +False+ otherwise.
+    def info?
+      @broadcasts.any? { |logger| logger.info? }
+    end
+
+    # Sets the log level to Logger::INFO for the whole brodcast.
+    def info!
+      dispatch { |logger| logger.info! }
+    end
+
+    # @return [Boolean] +True+ if the log level allows entries with severity Logger::WARN to be written
+    #    to at least one broadcast. +False+ otherwise.
+    def warn?
+      @broadcasts.any? { |logger| logger.warn? }
+    end
+
+    # Sets the log level to Logger::WARN for the whole brodcast.
+    def warn!
+      dispatch { |logger| logger.warn! }
+    end
+
+    # @return [Boolean] +True+ if the log level allows entries with severity Logger::ERROR to be written
+    #    to at least one broadcast. +False+ otherwise.
+    def error?
+      @broadcasts.any? { |logger| logger.error? }
+    end
+
+    # Sets the log level to Logger::ERROR for the whole brodcast.
+    def error!
+      dispatch { |logger| logger.error! }
+    end
+
+    # @return [Boolean] +True+ if the log level allows entries with severity Logger::FATAL to be written
+    #    to at least one broadcast. +False+ otherwise.
+    def fatal?
+      @broadcasts.any? { |logger| logger.fatal? }
+    end
+
+    # Sets the log level to Logger::FATAL for the whole brodcast.
+    def fatal!
+      dispatch { |logger| logger.fatal! }
     end
 
     private

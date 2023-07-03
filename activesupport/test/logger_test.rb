@@ -176,8 +176,7 @@ class LoggerTest < ActiveSupport::TestCase
     another_output  = StringIO.new
     another_logger  = ActiveSupport::Logger.new(another_output)
 
-    logger = ActiveSupport::BroadcastLogger.new
-    logger.broadcast_to(@logger, another_logger)
+    logger = ActiveSupport::BroadcastLogger.new(@logger, another_logger)
 
     logger.debug "CORRECT DEBUG"
     logger.silence do |logger|
@@ -199,8 +198,7 @@ class LoggerTest < ActiveSupport::TestCase
     another_output  = StringIO.new
     another_logger  = ::Logger.new(another_output)
 
-    logger = ActiveSupport::BroadcastLogger.new
-    logger.broadcast_to(@logger, another_logger)
+    logger = ActiveSupport::BroadcastLogger.new(@logger, another_logger)
 
     logger.debug "CORRECT DEBUG"
     logger.silence do |logger|
